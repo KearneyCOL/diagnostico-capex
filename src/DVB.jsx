@@ -317,7 +317,8 @@ export default function DVB() {
   const [showModal,  setShowModal]  = useState(false);
   const [inputId,    setInputId]    = useState("");
   const [idError,    setIdError]    = useState("");
-  const [viewers,    setViewers]    = useState(1); // contador de presencia
+  const [viewers,    setViewers]    = useState(1);
+  const [bFilter,    setBFilter]    = useState("all"); // filtro tab brechas // contador de presencia
   const saveTimer    = useRef(null);
   const channelRef   = useRef(null);
 
@@ -1287,8 +1288,7 @@ const resetAll = () => {
               });
             });
 
-            // Filtro por paquete — usa el estado del rubro activo o "all"
-            const [bFilter, setBFilter] = React.useState("all");
+            // Filtro por paquete
             const brechasFilt = bFilter === "all" ? brechas : brechas.filter(b => b.rubro.key === bFilter);
 
             const top10 = [...brechasFilt].sort((a,b) => b.gap-a.gap || a.score-b.score).slice(0,10);
