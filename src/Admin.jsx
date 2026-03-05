@@ -108,6 +108,8 @@ export default function Admin() {
     await supabase.from("dvb_assessments").delete().neq("id", "");
     setSessions([]);
   };
+
+  const exportLog = () => {
     const wb = XLSX.utils.book_new();
 
     // ── Hoja 1: Resumen por sesión ─────────────────────────────────────────
