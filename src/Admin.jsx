@@ -41,58 +41,42 @@ const wavg = (subs, ans) => {
   subs.forEach(s => { const v=ans?.[s.id]; if(v>0){t+=v*s.p; w+=s.p;} });
   return w ? t/w : 0;
 };
+// DVB guarda como { ans: {...}, drivers: {...} } — extraemos ans
+const getAns = (data) => data?.ans ?? data ?? {};
+
 const globalScore = (data) => {
-  if (!data) return 0;
+  const ans = getAns(data);
+  if (!ans) return 0;
   const vs = RUBROS.map(r => {
-    const cs = CRITERIOS.map(c => wavg(c.subs, data[r.key])).filter(v=>v>0);
+    const cs = CRITERIOS.map(c => wavg(c.subs, ans[r.key])).filter(v=>v>0);
     return cs.length ? cs.reduce((a,b)=>a+b)/cs.length : 0;
   }).filter(v=>v>0);
   return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0;
 };
 const answered = (data) => {
-  if (!data) return 0;
-  return RUBROS.reduce((s,r) => s + CRITERIOS.reduce((s2,c) => s2 + c.subs.filter(sq => data[r.key]?.[sq.id] > 0).length, 0), 0);
+  const ans = getAns(data);
+  if (!ans) return 0;
+  return RUBROS.reduce((s,r) => s + CRITERIOS.reduce((s2,c) => s2 + c.subs.filter(sq => ans[r.key]?.[sq.id] > 0).length, 0), 0);
 };
 const totalQ = RUBROS.length * CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
 const lv = v => C.L[Math.max(0,Math.min(4,Math.round(v)-1))];
 
 export default function Admin() {
-  const [sessions,   setSessions]   = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [lastSync,   setLastSync]   = useState(null);
-  const [search,     setSearch]     = useState("");
-  const [sortBy,     setSortBy]     = useState("updated_at"); // updated_at | score | pct
-  const [sortDir,    setSortDir]    = useState("desc");
-
-  const fetchSessions = async (silent = false) => {
-    if (!silent) setRefreshing(true);
-    const { data, error } = await supabase
-      .from("dvb_assessments")
-      .select("id, data, created_at, updated_at")
-      .order("updated_at", { ascending: false });
-    if (!error && data) {
-      setSessions(data);
-      setLastSync(new Date());
-    }
-    setLoading(false);
-    setRefreshing(false);
-  };
+  const [sessions, setSessions] = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [search,   setSearch]   = useState("");
+  const [sortBy,   setSortBy]   = useState("updated_at"); // updated_at | score | pct
+  const [sortDir,  setSortDir]  = useState("desc");
 
   useEffect(() => {
-    fetchSessions(true);
-
-    // Suscripción en tiempo real
-    const channel = supabase
-      .channel("dvb_admin_realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "dvb_assessments" },
-        () => { fetchSessions(true); }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    supabase
+      .from("dvb_assessments")
+      .select("id, data, created_at, updated_at")
+      .order("updated_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data) setSessions(data);
+        setLoading(false);
+      });
   }, []);
 
   const rows = sessions
@@ -149,12 +133,12 @@ export default function Admin() {
       "Score global":       s.score > 0 ? +s.score.toFixed(2) : "",
       "Nivel":              s.score > 0 ? C.L[Math.max(0,Math.min(4,Math.round(s.score)-1))].label : "Sin datos",
       ...Object.fromEntries(CRITERIOS.map(c => {
-        const cs = RUBROS.map(r => wavg(c.subs, s.data?.[r.key])).filter(v=>v>0);
+        const cs = RUBROS.map(r => wavg(c.subs, getAns(s.data)?.[r.key])).filter(v=>v>0);
         const avg = cs.length ? cs.reduce((a,b)=>a+b)/cs.length : "";
         return [`Criterio ${c.num} - ${c.label}`, avg ? +avg.toFixed(2) : ""];
       })),
       ...Object.fromEntries(RUBROS.map(r => {
-        const cs = CRITERIOS.map(c => wavg(c.subs, s.data?.[r.key])).filter(v=>v>0);
+        const cs = CRITERIOS.map(c => wavg(c.subs, getAns(s.data)?.[r.key])).filter(v=>v>0);
         const avg = cs.length ? cs.reduce((a,b)=>a+b)/cs.length : "";
         return [`Paquete - ${r.label}`, avg ? +avg.toFixed(2) : ""];
       })),
@@ -173,7 +157,7 @@ export default function Admin() {
               "Paquete": r.label,
               "Criterio": `${c.num} - ${c.label}`,
               "Pregunta ID": sq.id,
-              "Respuesta (1-5)": s.data?.[r.key]?.[sq.id] || "",
+              "Respuesta (1-5)": getAns(s.data)?.[r.key]?.[sq.id] || "",
             });
           });
         });
@@ -308,24 +292,6 @@ export default function Admin() {
           <span style={{fontSize:11, color:C.inkSoft}}>Panel de Administración</span>
         </div>
         <div style={{display:"flex", gap:10, alignItems:"center"}}>
-          {/* Indicador de sync */}
-          {lastSync && (
-            <span style={{fontSize:10.5, color:C.inkSoft}}>
-              {refreshing ? "⟳ Actualizando…" : `↻ ${lastSync.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`}
-            </span>
-          )}
-          <button
-            onClick={() => fetchSessions(false)}
-            disabled={refreshing}
-            title="Actualizar datos"
-            style={{
-              padding:"5px 12px", borderRadius:7, fontSize:11, fontWeight:700,
-              cursor: refreshing ? "default" : "pointer", fontFamily:FF,
-              border:`1px solid ${C.border}`, background:C.white, color:C.inkMid,
-              opacity: refreshing ? 0.6 : 1, transition:"opacity .2s",
-            }}>
-            {refreshing ? "⟳" : "↻ Actualizar"}
-          </button>
           <button onClick={()=>setShowGen(true)} style={{
             padding:"5px 14px", borderRadius:7, fontSize:11, fontWeight:700,
             cursor:"pointer", fontFamily:FF,
