@@ -319,6 +319,7 @@ export default function DVB() {
   const [idError,    setIdError]    = useState("");
   const [viewers,    setViewers]    = useState(1);
   const [bFilter,    setBFilter]    = useState("all"); // filtro tab brechas // contador de presencia
+  const [rFilter,    setRFilter]    = useState("all"); // filtro tab resumen
   const saveTimer    = useRef(null);
   const channelRef   = useRef(null);
 
@@ -763,177 +764,200 @@ const resetAll = () => {
 
           {/* ══════════════════════════ INTRO ══ */}
           {tab==="intro" && (
-            <div style={{maxWidth:940}}>
+            <div style={{maxWidth:900}}>
 
-              {/* Hero — split layout mirroring master slide 1 */}
+              {/* ── Hero ── */}
               <div style={{
-                display:"grid", gridTemplateColumns:"290px 1fr",
-                borderRadius:12, overflow:"hidden", marginBottom:24,
-                boxShadow:"0 4px 32px rgba(0,0,0,0.12)",
+                borderRadius:12, overflow:"hidden", marginBottom:20,
+                boxShadow:"0 4px 28px rgba(0,0,0,0.12)",
+                display:"grid", gridTemplateColumns:"260px 1fr",
               }}>
-                {/* Left — Claro red panel */}
-                <div style={{
-                  background:`linear-gradient(160deg, #C8281C 0%, #A81E14 100%)`,
-                  padding:"28px 26px 28px",
-                  display:"flex", flexDirection:"column",
-                  position:"relative", overflow:"hidden",
-                }}>
-                  {/* Subtle geometric decoration */}
-                  <div style={{position:"absolute",top:-40,right:-40,width:130,height:130,borderRadius:"50%",background:"rgba(255,255,255,0.04)",pointerEvents:"none"}}/>
-                  <div style={{position:"absolute",bottom:20,left:-30,width:90,height:90,borderRadius:"50%",background:"rgba(255,255,255,0.03)",pointerEvents:"none"}}/>
-
-                  {/* Logo — PNG with filter to make it white */}
-                  <div style={{marginBottom:22}}>
-                    <img
-                      src={LOGO_PNG}
-                      alt="Claro"
-                      style={{
-                        height:28, width:"auto", display:"block",
-                        filter:"brightness(0) saturate(100%) invert(1)",
-                        WebkitFilter:"brightness(0) saturate(100%) invert(1)",
-                      }}
-                    />
+                {/* Panel rojo */}
+                <div style={{background:`linear-gradient(160deg,#C8281C 0%,#A81E14 100%)`, padding:"28px 24px", display:"flex", flexDirection:"column", position:"relative", overflow:"hidden"}}>
+                  <div style={{position:"absolute",top:-40,right:-40,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
+                  <div style={{position:"absolute",bottom:10,left:-25,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.03)"}}/>
+                  <img src={LOGO_PNG} alt="Claro" style={{height:24,width:"auto",marginBottom:20,filter:"brightness(0) saturate(100%) invert(1)",WebkitFilter:"brightness(0) saturate(100%) invert(1)"}}/>
+                  <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:"0.18em",marginBottom:10}}>Drivers Value Budgeting</div>
+                  <h1 style={{fontSize:19,fontWeight:800,color:"white",margin:"0 0 4px",lineHeight:1.25,letterSpacing:"-0.01em"}}>Diagnóstico de Madurez</h1>
+                  <h2 style={{fontSize:16,fontWeight:400,fontStyle:"italic",color:"rgba(255,255,255,0.7)",margin:"0 0 16px"}}>Construcción de CAPEX</h2>
+                  <div style={{width:24,height:2,background:C.gold,borderRadius:99,marginBottom:14}}/>
+                  <p style={{fontSize:11,color:"rgba(255,255,255,0.5)",margin:0,lineHeight:1.6}}>8 Paquetes · 6 Criterios<br/>5 Niveles · 48 Preguntas</p>
+                  <div style={{marginTop:"auto",paddingTop:20,display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+                    {RUBROS.map(r=>(
+                      <div key={r.key} onClick={()=>{setRubro(r.key);setTab("detail");}} style={{background:"rgba(0,0,0,0.18)",borderRadius:5,padding:"5px 7px",fontSize:9.5,fontWeight:600,color:"rgba(255,255,255,0.8)",cursor:"pointer",border:"1px solid rgba(255,255,255,0.1)",textAlign:"center"}}>
+                        {r.icon} {r.label}
+                      </div>
+                    ))}
                   </div>
+                </div>
 
-                  {/* Eyebrow label */}
-                  <div style={{
-                    display:"inline-flex", alignItems:"center", gap:6,
-                    marginBottom:14,
-                  }}>
-                    <div style={{width:16, height:1.5, background:"rgba(255,255,255,0.5)", borderRadius:99}}/>
-                    <span style={{fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.55)", textTransform:"uppercase", letterSpacing:"0.2em"}}>Proyecto Estratégico</span>
+                {/* Panel blanco — objetivo */}
+                <div style={{background:C.white, padding:"28px 30px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                    <div style={{width:3,height:14,background:C.red,borderRadius:99}}/>
+                    <div style={{fontSize:9.5,fontWeight:700,color:C.inkSoft,textTransform:"uppercase",letterSpacing:"0.14em"}}>Objetivo del diagnóstico</div>
                   </div>
-
-                  {/* Main title — all white, strong weight */}
-                  <h1 style={{
-                    fontSize:20, fontWeight:800, color:"white",
-                    margin:"0 0 4px", lineHeight:1.25, letterSpacing:"-0.01em",
-                  }}>
-                    Madurez de<br/>Construcción
-                  </h1>
-                  <h2 style={{
-                    fontSize:17, fontWeight:400, fontStyle:"italic",
-                    color:"rgba(255,255,255,0.75)", margin:"0 0 18px", lineHeight:1.3,
-                  }}>
-                    Presupuesto CAPEX
-                  </h2>
-
-                  {/* Gold divider */}
-                  <div style={{width:28, height:2, background:C.gold, borderRadius:99, marginBottom:14}}/>
-
-                  {/* Subtitle */}
-                  <p style={{fontSize:11, color:"rgba(255,255,255,0.5)", margin:"0 0 0", lineHeight:1.6}}>
-                    Modelo de Diagnóstico<br/>por Paquete de CAPEX
+                  <p style={{fontSize:13,color:C.ink,lineHeight:1.7,margin:"0 0 16px"}}>
+                    Este diagnóstico evalúa <strong>cómo se construye el presupuesto CAPEX</strong> en cada paquete tecnológico de Claro Colombia, identificando el nivel de madurez actual en 6 dimensiones clave del proceso de planeación de inversiones.
                   </p>
-
-                  {/* Dominio chips */}
-                  <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:5, marginTop:"auto", paddingTop:20}}>
-                    {RUBROS.map(r => (
-                      <div key={r.key} onClick={()=>{setRubro(r.key);setTab("detail");}} style={{
-                        background:"rgba(0,0,0,0.18)", borderRadius:5,
-                        padding:"5px 7px", fontSize:10, fontWeight:600,
-                        color:"rgba(255,255,255,0.80)", cursor:"pointer",
-                        border:"1px solid rgba(255,255,255,0.10)",
-                        textAlign:"center", transition:"all .15s",
-                        backdropFilter:"blur(4px)",
-                      }}>{r.icon} {r.label}</div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right — clean white with marco metodológico */}
-                <div style={{background:C.white, padding:"28px 30px", display:"flex", flexDirection:"column", justifyContent:"space-between"}}>
-                  <div>
-                    <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:20}}>
-                      <div style={{width:3, height:14, background:C.red, borderRadius:99}}/>
-                      <div style={{fontSize:9.5, fontWeight:700, color:C.inkSoft, textTransform:"uppercase", letterSpacing:"0.16em"}}>Marco Metodológico</div>
-                    </div>
-                  {[
-                    {n:"01", t:"Levantamiento de Línea Base", d:"Entendimiento de estrategia, granularidad, modelo de gestión y herramientas actuales"},
-                    {n:"02", t:"Modelo Drivers Value Budgeting", d:"Definición de proceso de traducción, categorías, PxQ, gestión y seguimiento de drivers"},
-                    {n:"03", t:"Roll-Out", d:"Captura de Quick Wins, plan de implementación y alineación del presupuesto 2027"},
-                  ].map((item,i) => (
-                    <div key={i} style={{display:"flex", gap:14, marginBottom:i<2?16:0, paddingBottom:i<2?16:0, borderBottom:i<2?`1px solid ${C.borderSm}`:"none"}}>
-                      <div style={{width:30, height:30, borderRadius:6, background:C.redLight, border:`1px solid ${C.redBorder}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0}}>
-                        <span style={{fontSize:11, fontWeight:900, color:C.redH}}>{item.n}</span>
-                      </div>
-                      <div>
-                        <div style={{fontSize:12.5, fontWeight:700, color:C.ink, marginBottom:2}}>{item.t}</div>
-                        <div style={{fontSize:11, color:C.inkMid, lineHeight:1.55}}>{item.d}</div>
-                      </div>
-                    </div>
-                  ))}
-                  </div>
-                  {/* Stats footer */}
-                  <div style={{marginTop:20, paddingTop:14, borderTop:`1px solid ${C.borderSm}`, display:"flex", justifyContent:"space-around"}}>
-                    {[["6","Criterios"],["5","Niveles"],["8","Paquetes"],["48","Preguntas"]].map(([n,l]) => (
+                  <p style={{fontSize:12.5,color:C.inkMid,lineHeight:1.65,margin:"0 0 18px"}}>
+                    No evalúa qué se invierte ni cuánto — evalúa <em>cómo se decide, estima, documenta y controla</em> esa inversión. El resultado es un mapa claro de dónde está hoy el proceso y cuáles son las oportunidades de mayor impacto para mejorar la precisión, trazabilidad y gobernanza del CAPEX.
+                  </p>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10,paddingTop:14,borderTop:`1px solid ${C.borderSm}`}}>
+                    {[["6","Criterios"],["5","Niveles"],["8","Paquetes"],["48","Preguntas"]].map(([n,l])=>(
                       <div key={l} style={{textAlign:"center"}}>
-                        <div style={{fontSize:24, fontWeight:900, color:C.red, lineHeight:1}}>{n}</div>
-                        <div style={{fontSize:9, color:C.inkSoft, letterSpacing:"0.08em", marginTop:3, textTransform:"uppercase"}}>{l}</div>
+                        <div style={{fontSize:26,fontWeight:900,color:C.red,lineHeight:1}}>{n}</div>
+                        <div style={{fontSize:9,color:C.inkSoft,letterSpacing:"0.08em",marginTop:3,textTransform:"uppercase"}}>{l}</div>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* 6 Criterios — grid matching master slide 2 style */}
-              <div style={{background:C.white, borderRadius:12, border:`1px solid ${C.border}`, padding:"22px 24px", marginBottom:18, boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:18}}>
-                  <div style={{width:3, height:16, background:C.red, borderRadius:99}}/>
-                  <h2 style={{fontSize:15, fontWeight:800, margin:0}}>6 Criterios de Madurez CAPEX</h2>
-                  <span style={{fontSize:11, color:C.inkSoft, fontStyle:"italic", marginLeft:4}}>Modelo de evaluación por Paquete de CAPEX</span>
+              {/* ── 6 Criterios ── */}
+              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:18,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                  <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
+                  <h2 style={{fontSize:14,fontWeight:800,margin:0}}>¿Qué evalúa el diagnóstico?</h2>
+                  <span style={{fontSize:11,color:C.inkSoft,fontStyle:"italic",marginLeft:4}}>6 criterios aplicados a cada paquete de CAPEX</span>
                 </div>
-                <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10}}>
-                  {CRITERIOS.map(c => (
-                    <div key={c.key} onClick={()=>{setTab("detail");setExp(c.key);}} style={{
-                      borderRadius:8, border:`1px solid ${C.border}`, overflow:"hidden",
-                      cursor:"pointer", transition:"box-shadow .15s", background:C.white,
-                    }}>
-                      {/* Header like master — red bg with number badge */}
-                      <div style={{background:C.redH, padding:"8px 12px", display:"flex", alignItems:"center", gap:8}}>
-                        <div style={{width:26, height:26, borderRadius:5, background:"rgba(255,255,255,0.18)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0}}>
-                          <span style={{fontSize:12, fontWeight:900, color:"white"}}>{c.num}</span>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                  {CRITERIOS.map(c=>(
+                    <div key={c.key} style={{borderRadius:8,border:`1px solid ${C.border}`,overflow:"hidden"}}>
+                      <div style={{background:C.redH,padding:"7px 11px",display:"flex",alignItems:"center",gap:7}}>
+                        <div style={{width:22,height:22,borderRadius:4,background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          <span style={{fontSize:10,fontWeight:900,color:"white"}}>{c.num}</span>
                         </div>
-                        <span style={{fontSize:12, fontWeight:700, color:"white", flex:1}}>{c.label}</span>
-                        <span style={{fontSize:15}}>{c.icon}</span>
+                        <span style={{fontSize:11.5,fontWeight:700,color:"white",flex:1}}>{c.label}</span>
+                        <span style={{fontSize:14}}>{c.icon}</span>
                       </div>
-                      <div style={{padding:"10px 12px 12px"}}>
-                        <p style={{fontSize:11.5, color:C.inkMid, margin:"0 0 7px", lineHeight:1.5}}>{c.desc}</p>
-                        <div style={{fontSize:9.5, color:C.red, fontStyle:"italic"}}>{c.vinc.split("·")[0].trim()}</div>
+                      <div style={{padding:"9px 11px 11px"}}>
+                        <p style={{fontSize:11,color:C.inkMid,margin:0,lineHeight:1.5}}>{c.desc}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Escala de madurez — like master bottom legend but expanded */}
-              <div style={{background:C.white, borderRadius:12, border:`1px solid ${C.border}`, padding:"22px 24px", marginBottom:20, boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:18}}>
-                  <div style={{width:3, height:16, background:C.red, borderRadius:99}}/>
-                  <h2 style={{fontSize:15, fontWeight:800, margin:0}}>Escala de Madurez — 5 Niveles</h2>
+              {/* ── Escala ── */}
+              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:18,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+                  <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
+                  <h2 style={{fontSize:14,fontWeight:800,margin:0}}>Escala de calificación — 5 niveles</h2>
                 </div>
-                <div style={{display:"flex", gap:8}}>
-                  {C.L.map((l,i) => (
-                    <div key={i} style={{flex:1, borderRadius:8, border:`1.5px solid ${l.border}`, overflow:"hidden"}}>
-                      <div style={{background:l.c, padding:"8px 10px", display:"flex", alignItems:"center", gap:7}}>
-                        <div style={{width:22, height:22, borderRadius:"50%", background:"rgba(255,255,255,0.22)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0}}>
-                          <span style={{fontSize:12, fontWeight:900, color:"white"}}>{i+1}</span>
+                <div style={{display:"flex",gap:7}}>
+                  {C.L.map((l,i)=>(
+                    <div key={i} style={{flex:1,borderRadius:8,border:`1.5px solid ${l.border}`,overflow:"hidden"}}>
+                      <div style={{background:l.c,padding:"7px 10px",display:"flex",alignItems:"center",gap:6}}>
+                        <div style={{width:20,height:20,borderRadius:"50%",background:"rgba(255,255,255,0.22)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          <span style={{fontSize:11,fontWeight:900,color:"white"}}>{i+1}</span>
                         </div>
-                        <span style={{fontSize:9.5, fontWeight:800, color:"white", textTransform:"uppercase", letterSpacing:"0.08em"}}>{l.label}</span>
+                        <span style={{fontSize:9.5,fontWeight:800,color:"white",textTransform:"uppercase",letterSpacing:"0.07em"}}>{l.label}</span>
                       </div>
-                      <div style={{padding:"10px 10px 12px", background:l.bg}}>
-                        <p style={{fontSize:11, color:l.text, margin:0, lineHeight:1.5}}>{l.label === "Inicial" ? "Sin proceso formal. Decisiones ad-hoc." : l.label === "Básico" ? "Proceso incipiente y reactivo." : l.label === "Definido" ? "Proceso documentado y estable." : l.label === "Gestionado" ? "Proceso medido con KPIs activos." : "Mejora continua e institucionalizada."}</p>
+                      <div style={{padding:"8px 10px",background:l.bg}}>
+                        <p style={{fontSize:10.5,color:l.text,margin:0,lineHeight:1.5}}>{
+                          i===0?"No existe el proceso. Las decisiones son ad-hoc y no hay documentación ni responsables.":
+                          i===1?"El proceso existe pero es informal, inconsistente o depende de personas clave sin respaldo institucional.":
+                          i===2?"El proceso está documentado, es repetible y se aplica de forma consistente en la mayoría de los casos.":
+                          i===3?"El proceso se mide con KPIs activos, tiene revisión periódica y genera acciones correctivas.":
+                          "El proceso mejora continuamente, está institucionalizado y se usa como referencia interna."
+                        }</p>
                       </div>
                     </div>
                   ))}
                 </div>
+                <div style={{marginTop:12,padding:"10px 14px",background:C.bgStripe,borderRadius:7,border:`1px solid ${C.borderSm}`}}>
+                  <span style={{fontSize:11,fontWeight:700,color:C.ink}}>Criterio clave para calificar: </span>
+                  <span style={{fontSize:11,color:C.inkMid}}>Califique el proceso <strong>tal como opera hoy</strong>, no como debería operar ni como está planificado. Si el proceso existe en papel pero no se aplica consistentemente, el nivel correcto es 1 o 2.</span>
+                </div>
               </div>
 
-              <div style={{display:"flex", justifyContent:"center", gap:10, paddingBottom:4}}>
-                <button onClick={()=>setTab("detail")} style={{padding:"11px 30px", background:C.red, color:"white", border:"none", borderRadius:7, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FF, letterSpacing:"0.02em"}}>
+              {/* ── Instructivo ── */}
+              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:18,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18}}>
+                  <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
+                  <h2 style={{fontSize:14,fontWeight:800,margin:0}}>¿Cómo completar el diagnóstico?</h2>
+                </div>
+
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+
+                  {/* Modalidad 1: Individual */}
+                  <div style={{borderRadius:10,border:`1.5px solid ${C.border}`,overflow:"hidden"}}>
+                    <div style={{background:C.redH,padding:"11px 16px",display:"flex",alignItems:"center",gap:9}}>
+                      <span style={{fontSize:20}}>🧑‍💻</span>
+                      <div>
+                        <div style={{fontSize:12,fontWeight:800,color:"white"}}>Modalidad A — Cuestionario Individual</div>
+                        <div style={{fontSize:10,color:"rgba(255,255,255,0.65)"}}>Tiempo estimado: 30–45 min por paquete</div>
+                      </div>
+                    </div>
+                    <div style={{padding:"14px 16px"}}>
+                      {[
+                        {n:"1", t:"Quién lo completa", d:"El responsable directo de construir el presupuesto de cada paquete tecnológico: el líder de planeación financiera o el responsable técnico del área. Una persona por paquete."},
+                        {n:"2", t:"Cómo navegar", d:"Use el menú lateral para seleccionar el paquete que va a evaluar. Dentro de cada paquete, expanda los 6 criterios uno por uno y responda todas las preguntas antes de pasar al siguiente."},
+                        {n:"3", t:"Cómo calificar", d:"Lea cada pregunta y seleccione el nivel (1–5) que mejor describe cómo opera ese proceso HOY. Si no existe el proceso, seleccione 1. Si existe pero es informal, seleccione 2. Sea honesto: el diagnóstico solo es útil si refleja la realidad."},
+                        {n:"4", t:"Drivers por paquete", d:"En el criterio de Granularidad, hay un campo de texto libre para describir los drivers que usan actualmente para estimar el presupuesto de ese paquete (ej. cantidad de nodos, km de fibra, tickets). Complételo con el mayor detalle posible."},
+                        {n:"5", t:"Guardar y compartir", d:"El diagnóstico se guarda automáticamente. Use 'Compartir' en la barra superior para enviar el link a otro participante o para retomarlo desde otro dispositivo."},
+                      ].map((s,i,arr)=>(
+                        <div key={i} style={{display:"flex",gap:10,paddingBottom:i<arr.length-1?12:0,marginBottom:i<arr.length-1?12:0,borderBottom:i<arr.length-1?`1px solid ${C.borderSm}`:"none"}}>
+                          <div style={{width:22,height:22,borderRadius:"50%",background:C.redLight,border:`1px solid ${C.redBorder}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>
+                            <span style={{fontSize:10,fontWeight:900,color:C.redH}}>{s.n}</span>
+                          </div>
+                          <div>
+                            <div style={{fontSize:11.5,fontWeight:700,color:C.ink,marginBottom:2}}>{s.t}</div>
+                            <p style={{fontSize:11,color:C.inkMid,margin:0,lineHeight:1.6}}>{s.d}</p>
+                          </div>
+                        </div>
+                      ))}
+                      <div style={{marginTop:12,padding:"9px 12px",background:"#FFFBEB",borderRadius:7,border:"1px solid #FDE68A"}}>
+                        <span style={{fontSize:11,fontWeight:700,color:"#92400E"}}>💡 Recomendación: </span>
+                        <span style={{fontSize:11,color:"#92400E"}}>Complete primero el paquete que mejor conoce para calibrar la escala. Eso le dará un marco de referencia para evaluar los demás paquetes con consistencia.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Modalidad 2: Taller */}
+                  <div style={{borderRadius:10,border:`1.5px solid ${C.border}`,overflow:"hidden"}}>
+                    <div style={{background:"#1E3A5F",padding:"11px 16px",display:"flex",alignItems:"center",gap:9}}>
+                      <span style={{fontSize:20}}>👥</span>
+                      <div>
+                        <div style={{fontSize:12,fontWeight:800,color:"white"}}>Modalidad B — Taller en Grupo</div>
+                        <div style={{fontSize:10,color:"rgba(255,255,255,0.65)"}}>Tiempo estimado: 90–120 min por sesión</div>
+                      </div>
+                    </div>
+                    <div style={{padding:"14px 16px"}}>
+                      {[
+                        {n:"1", t:"Quiénes participan", d:"Líder de planeación financiera + responsables de 2–3 paquetes por sesión + representante de controlling. Máximo 6 personas para mantener el foco. No es necesario tener a todos en la misma sesión."},
+                        {n:"2", t:"Preparación previa", d:"El facilitador genera los links por paquete desde el Admin (botón 🔗 Generar link) y los comparte con los participantes antes de la sesión. Cada paquete tiene su propio link. Los participantes pueden revisar las preguntas antes del taller."},
+                        {n:"3", t:"Dinámica del taller", d:"Proyecte el diagnóstico en pantalla. Lean cada pregunta en voz alta y debatan el nivel actual antes de seleccionar la calificación. Si hay desacuerdo entre participantes, documenten el rango y usen el promedio. El debate es parte del valor del ejercicio."},
+                        {n:"4", t:"Foco de la discusión", d:"Para cada pregunta, la discusión debe responder: '¿Tenemos evidencia de que este proceso opera así hoy?' Si no hay evidencia (documento, reporte, acta), el nivel no puede ser 4 ni 5. La ausencia de evidencia es un hallazgo en sí mismo."},
+                        {n:"5", t:"Al terminar el taller", d:"Use el Heatmap para revisar el resultado en conjunto. Identifiquen colectivamente las 2–3 brechas más críticas en el tab Brechas & Roadmap. Eso define el punto de partida para el plan de acción."},
+                      ].map((s,i,arr)=>(
+                        <div key={i} style={{display:"flex",gap:10,paddingBottom:i<arr.length-1?12:0,marginBottom:i<arr.length-1?12:0,borderBottom:i<arr.length-1?`1px solid ${C.borderSm}`:"none"}}>
+                          <div style={{width:22,height:22,borderRadius:"50%",background:"#EFF6FF",border:"1px solid #BFDBFE",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>
+                            <span style={{fontSize:10,fontWeight:900,color:"#1E3A5F"}}>{s.n}</span>
+                          </div>
+                          <div>
+                            <div style={{fontSize:11.5,fontWeight:700,color:C.ink,marginBottom:2}}>{s.t}</div>
+                            <p style={{fontSize:11,color:C.inkMid,margin:0,lineHeight:1.6}}>{s.d}</p>
+                          </div>
+                        </div>
+                      ))}
+                      <div style={{marginTop:12,padding:"9px 12px",background:"#EFF6FF",borderRadius:7,border:"1px solid #BFDBFE"}}>
+                        <span style={{fontSize:11,fontWeight:700,color:"#1E3A5F"}}>💡 Recomendación: </span>
+                        <span style={{fontSize:11,color:"#1E3A5F"}}>Haga una sesión por bloque de paquetes similares (ej. sesión 1: Red Móvil + Transmisión; sesión 2: Nube Pública + Nube Telco; sesión 3: IT + UMM + UMC). Esto mantiene el nivel de detalle sin fatiga.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* CTA */}
+              <div style={{display:"flex",justifyContent:"center",gap:10,paddingBottom:4}}>
+                <button onClick={()=>setTab("detail")} style={{padding:"11px 30px",background:C.red,color:"white",border:"none",borderRadius:7,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:FF,letterSpacing:"0.02em"}}>
                   Comenzar Diagnóstico →
                 </button>
-                <button onClick={()=>setTab("heatmap")} style={{padding:"11px 22px", background:C.white, color:C.redH, border:`1.5px solid ${C.border}`, borderRadius:7, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FF}}>
+                <button onClick={()=>setTab("heatmap")} style={{padding:"11px 22px",background:C.white,color:C.redH,border:`1.5px solid ${C.border}`,borderRadius:7,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:FF}}>
                   Ver Heatmap
                 </button>
               </div>
@@ -1194,87 +1218,163 @@ const resetAll = () => {
           )}
 
           {/* ══════════════════════════ RESUMEN ══ */}
-          {tab==="resumen" && (
-            <div style={{maxWidth:900}}>
-              <h2 style={{fontSize:18, fontWeight:800, marginBottom:20, letterSpacing:"-0.02em"}}>Resumen Ejecutivo · Drivers Value Budgeting</h2>
+          {tab==="resumen" && (() => {
+            // Scores filtrados por paquete o globales
+            const rubroFilt = rFilter === "all" ? null : RUBROS.find(r=>r.key===rFilter);
+            const csFilt  = (c) => rFilter==="all" ? cg(c) : cs(rFilter, c);
+            const gsFilt  = rFilter==="all" ? gs : rs(rFilter);
+            const totAFilt = rFilter==="all" ? totA : CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[rFilter]?.[sq.id]>0).length,0);
+            const totQFilt = rFilter==="all" ? totQ : CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
+            const pctFilt  = totQFilt>0 ? Math.round((totAFilt/totQFilt)*100) : 0;
 
-              {/* Global score card — left red, right white, like master hero */}
-              <div style={{borderRadius:12, overflow:"hidden", marginBottom:20, boxShadow:"0 2px 20px rgba(0,0,0,0.09)", display:"grid", gridTemplateColumns:"200px 1fr"}}>
-                <div style={{background:C.redH, padding:"28px 24px", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center"}}>
-                  <img src={LOGO_PNG} alt="Claro" style={{
-                    height:20, filter:"brightness(0) saturate(100%) invert(1)",
-                    WebkitFilter:"brightness(0) saturate(100%) invert(1)",
-                    marginBottom:14
-                  }}/>
-                  <div style={{fontSize:8.5, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", letterSpacing:"0.14em", textAlign:"center", marginBottom:6}}>Madurez Global</div>
-                  <div style={{fontSize:52, fontWeight:900, color:gs>0?"white":"rgba(255,255,255,0.15)", lineHeight:1, letterSpacing:"-0.04em"}}>{fmt(gs)}</div>
-                  <div style={{fontSize:13, color:"rgba(255,255,255,0.35)"}}>/5.0</div>
-                  {gs>0 && <div style={{marginTop:10, background:"rgba(255,255,255,0.15)", borderRadius:4, padding:"3px 10px", fontSize:11, fontWeight:700, color:"white"}}>{lv(Math.round(gs)).label}</div>}
+            return (
+            <div style={{maxWidth:900}}>
+
+              {/* Encabezado + filtro */}
+              <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:12}}>
+                <div>
+                  <h2 style={{fontSize:18,fontWeight:800,margin:"0 0 3px",letterSpacing:"-0.02em"}}>Resumen Ejecutivo · Drivers Value Budgeting</h2>
+                  <p style={{fontSize:12,color:C.inkMid,margin:0}}>
+                    {rFilter==="all" ? "Vista consolidada — todos los paquetes" : `Paquete: ${rubroFilt?.icon} ${rubroFilt?.label}`}
+                  </p>
                 </div>
-                <div style={{background:C.white, padding:"24px 28px"}}>
-                  <div style={{display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:18}}>
-                    {[["Respondidas",totA],["Total",totQ],["Completado",`${pct}%`]].map(([l,v]) => (
-                      <div key={l} style={{textAlign:"center", padding:"12px", background:C.bgStripe, borderRadius:8, border:`1px solid ${C.borderSm}`}}>
-                        <div style={{fontSize:24, fontWeight:900, color:C.redH, lineHeight:1}}>{v}</div>
-                        <div style={{fontSize:9.5, color:C.inkSoft, marginTop:4, textTransform:"uppercase", letterSpacing:"0.08em"}}>{l}</div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  <button onClick={()=>setRFilter("all")} style={{
+                    padding:"5px 12px",borderRadius:7,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:FF,
+                    border:`1.5px solid ${rFilter==="all"?C.red:C.border}`,
+                    background:rFilter==="all"?C.redLight:C.white,
+                    color:rFilter==="all"?C.redH:C.inkMid,
+                  }}>🏢 General</button>
+                  {RUBROS.map(r=>(
+                    <button key={r.key} onClick={()=>setRFilter(r.key)} style={{
+                      padding:"5px 12px",borderRadius:7,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:FF,
+                      border:`1.5px solid ${rFilter===r.key?C.red:C.border}`,
+                      background:rFilter===r.key?C.redLight:C.white,
+                      color:rFilter===r.key?C.redH:C.inkMid,
+                    }}>{r.icon} {r.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Score card */}
+              <div style={{borderRadius:12,overflow:"hidden",marginBottom:20,boxShadow:"0 2px 20px rgba(0,0,0,0.09)",display:"grid",gridTemplateColumns:"200px 1fr"}}>
+                <div style={{background:C.redH,padding:"28px 24px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                  <img src={LOGO_PNG} alt="Claro" style={{height:20,filter:"brightness(0) saturate(100%) invert(1)",WebkitFilter:"brightness(0) saturate(100%) invert(1)",marginBottom:14}}/>
+                  <div style={{fontSize:8.5,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:"0.14em",textAlign:"center",marginBottom:6}}>
+                    {rFilter==="all" ? "Madurez Global" : rubroFilt?.label}
+                  </div>
+                  <div style={{fontSize:52,fontWeight:900,color:gsFilt>0?"white":"rgba(255,255,255,0.15)",lineHeight:1,letterSpacing:"-0.04em"}}>{fmt(gsFilt)}</div>
+                  <div style={{fontSize:13,color:"rgba(255,255,255,0.35)"}}>/5.0</div>
+                  {gsFilt>0 && <div style={{marginTop:10,background:"rgba(255,255,255,0.15)",borderRadius:4,padding:"3px 10px",fontSize:11,fontWeight:700,color:"white"}}>{lv(Math.round(gsFilt)).label}</div>}
+                </div>
+                <div style={{background:C.white,padding:"24px 28px"}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:18}}>
+                    {[["Respondidas",totAFilt],["Total",totQFilt],["Completado",`${pctFilt}%`]].map(([l,v])=>(
+                      <div key={l} style={{textAlign:"center",padding:"12px",background:C.bgStripe,borderRadius:8,border:`1px solid ${C.borderSm}`}}>
+                        <div style={{fontSize:24,fontWeight:900,color:C.redH,lineHeight:1}}>{v}</div>
+                        <div style={{fontSize:9.5,color:C.inkSoft,marginTop:4,textTransform:"uppercase",letterSpacing:"0.08em"}}>{l}</div>
                       </div>
                     ))}
                   </div>
-                  <div style={{height:6, background:C.borderSm, borderRadius:99, overflow:"hidden"}}>
-                    <div style={{height:"100%", width:`${pct}%`, background:`linear-gradient(90deg,${C.redH},${C.red})`, borderRadius:99}}/>
+                  <div style={{height:6,background:C.borderSm,borderRadius:99,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${pctFilt}%`,background:`linear-gradient(90deg,${C.redH},${C.red})`,borderRadius:99}}/>
                   </div>
-                  <div style={{marginTop:7, fontSize:11, color:C.inkSoft}}>{pct}% del diagnóstico completado · {totA}/{totQ} preguntas</div>
+                  <div style={{marginTop:7,fontSize:11,color:C.inkSoft}}>{pctFilt}% del diagnóstico completado · {totAFilt}/{totQFilt} preguntas</div>
                 </div>
               </div>
 
               {/* Por criterio */}
-              <div style={{background:C.white, borderRadius:12, border:`1px solid ${C.border}`, padding:"20px 22px", marginBottom:14, boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:16}}>
-                  <div style={{width:3, height:15, background:C.red, borderRadius:99}}/>
-                  <h3 style={{fontSize:14, fontWeight:700, margin:0}}>Score por Criterio (promedio global)</h3>
+              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:14,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                  <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
+                  <h3 style={{fontSize:14,fontWeight:700,margin:0}}>
+                    Score por Criterio {rFilter==="all" ? "(promedio global)" : `— ${rubroFilt?.label}`}
+                  </h3>
                 </div>
-                {CRITERIOS.map(c => { const v=cg(c.key), l=v>0?lv(Math.round(v)):null; return (
+                {CRITERIOS.map(c=>{const v=csFilt(c.key),l=v>0?lv(Math.round(v)):null;return(
                   <div key={c.key} style={{marginBottom:12}}>
-                    <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:4}}>
-                      <span style={{fontSize:10.5, fontWeight:800, color:C.redH, width:22, flexShrink:0}}>{c.num}</span>
-                      <span style={{fontSize:12.5, fontWeight:600, flex:1}}>{c.icon} {c.label}</span>
-                      {v>0 ? <Badge v={Math.round(v)} sm/> : <span style={{fontSize:10, color:C.inkSoft}}>Sin datos</span>}
-                      <span style={{fontSize:13, fontWeight:700, color:v>0?l.c:C.inkFaint, width:24, textAlign:"right"}}>{fmt(v)}</span>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                      <span style={{fontSize:10.5,fontWeight:800,color:C.redH,width:22,flexShrink:0}}>{c.num}</span>
+                      <span style={{fontSize:12.5,fontWeight:600,flex:1}}>{c.icon} {c.label}</span>
+                      {v>0?<Badge v={Math.round(v)} sm/>:<span style={{fontSize:10,color:C.inkSoft}}>Sin datos</span>}
+                      <span style={{fontSize:13,fontWeight:700,color:v>0?l.c:C.inkFaint,width:24,textAlign:"right"}}>{fmt(v)}</span>
                     </div>
                     <div style={{paddingLeft:30}}><PBar v={v} color={v>0?l.c:C.borderSm}/></div>
                   </div>
-                ); })}
+                );})}
               </div>
 
-              {/* Por paquete / tipo de tecnología */}
-              <div style={{background:C.white, borderRadius:12, border:`1px solid ${C.border}`, padding:"20px 22px", boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:16}}>
-                  <div style={{width:3, height:15, background:C.red, borderRadius:99}}/>
-                  <h3 style={{fontSize:14, fontWeight:700, margin:0}}>Score por Paquete</h3>
+              {/* Por paquete — solo si vista general */}
+              {rFilter==="all" && (
+                <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                    <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
+                    <h3 style={{fontSize:14,fontWeight:700,margin:0}}>Score por Paquete</h3>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+                    {RUBROS.map(r=>{
+                      const sc=rs(r.key),l=sc>0?lv(Math.round(sc)):null;
+                      return(
+                        <div key={r.key} onClick={()=>setRFilter(r.key)} style={{padding:"12px 14px",borderRadius:9,cursor:"pointer",background:sc>0?l.bg:C.bgStripe,border:`1px solid ${sc>0?l.border:C.borderSm}`,transition:"all .15s",position:"relative",overflow:"hidden"}}>
+                          {sc>0&&<div style={{position:"absolute",top:0,left:0,right:0,height:3,background:l.c}}/>}
+                          <div style={{fontSize:20,marginBottom:5,marginTop:sc>0?3:0}}>{r.icon}</div>
+                          <div style={{fontSize:12,fontWeight:700,marginBottom:5}}>{r.label}</div>
+                          <div style={{fontSize:24,fontWeight:900,color:sc>0?l.c:C.borderSm,lineHeight:1}}>{fmt(sc)}</div>
+                          {sc>0&&<div style={{fontSize:10,color:l.text,fontWeight:600,marginTop:2,marginBottom:5}}>{l.label}</div>}
+                          <div style={{marginTop:sc>0?0:8}}><PBar v={sc} color={sc>0?l.c:C.borderSm}/></div>
+                          <div style={{marginTop:6,fontSize:9.5,color:C.inkSoft,textAlign:"center"}}>Ver detalle →</div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10}}>
-                  {RUBROS.map(r => {
-                    const sc=rs(r.key), l=sc>0?lv(Math.round(sc)):null;
-                    return (
-                      <div key={r.key} onClick={()=>{setRubro(r.key);setTab("detail");}} style={{
-                        padding:"12px 14px", borderRadius:9, cursor:"pointer",
-                        background: sc>0 ? l.bg : C.bgStripe,
-                        border:`1px solid ${sc>0 ? l.border : C.borderSm}`,
-                        transition:"all .15s", position:"relative", overflow:"hidden",
-                      }}>
-                        {sc>0 && <div style={{position:"absolute", top:0, left:0, right:0, height:3, background:l.c}}/>}
-                        <div style={{fontSize:20, marginBottom:5, marginTop:sc>0?3:0}}>{r.icon}</div>
-                        <div style={{fontSize:12, fontWeight:700, marginBottom:5}}>{r.label}</div>
-                        <div style={{fontSize:24, fontWeight:900, color:sc>0?l.c:C.borderSm, lineHeight:1}}>{fmt(sc)}</div>
-                        {sc>0 && <div style={{fontSize:10, color:l.text, fontWeight:600, marginTop:2, marginBottom:5}}>{l.label}</div>}
-                        <div style={{marginTop:sc>0?0:8}}><PBar v={sc} color={sc>0?l.c:C.borderSm}/></div>
+              )}
+
+              {/* Si filtrado por paquete: detalle de criterios de ese paquete */}
+              {rFilter!=="all" && (
+                <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                    <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
+                    <h3 style={{fontSize:14,fontWeight:700,margin:0}}>Detalle por pregunta — {rubroFilt?.label}</h3>
+                  </div>
+                  {CRITERIOS.map(c=>{
+                    const sc=cs(rFilter,c.key),l=sc>0?lv(Math.round(sc)):null;
+                    return(
+                      <div key={c.key} style={{marginBottom:14,paddingBottom:14,borderBottom:`1px solid ${C.borderSm}`}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                          <div style={{width:24,height:24,borderRadius:5,background:sc>0?l.c:C.borderSm,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            <span style={{fontSize:10,fontWeight:900,color:"white"}}>{c.num}</span>
+                          </div>
+                          <span style={{fontSize:13,fontWeight:700,flex:1}}>{c.icon} {c.label}</span>
+                          {sc>0?<Badge v={Math.round(sc)} sm/>:<span style={{fontSize:10,color:C.inkSoft}}>Sin datos</span>}
+                        </div>
+                        {c.subs.map(sq=>{
+                          const v=ans[rFilter]?.[sq.id]||0, sl=v>0?lv(v):null;
+                          return(
+                            <div key={sq.id} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${C.borderSm}`}}>
+                              <p style={{fontSize:11,color:C.inkMid,flex:1,margin:0,lineHeight:1.45}}>{sq.t}</p>
+                              {v>0
+                                ? <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
+                                    <div style={{width:50,height:4,background:C.borderSm,borderRadius:99,overflow:"hidden"}}>
+                                      <div style={{height:"100%",width:`${(v/5)*100}%`,background:sl.c,borderRadius:99}}/>
+                                    </div>
+                                    <span style={{fontSize:11,fontWeight:700,color:sl.c,width:16}}>{v}</span>
+                                    <span style={{fontSize:10,color:sl.text,background:sl.bg,border:`1px solid ${sl.border}`,borderRadius:4,padding:"1px 5px"}}>{sl.label}</span>
+                                  </div>
+                                : <span style={{fontSize:10,color:C.inkFaint,flexShrink:0}}>—</span>
+                              }
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   })}
                 </div>
-              </div>
+              )}
+
             </div>
-          )}
+            );
+          })()}
 
           {/* ══════════════════════════ BRECHAS & ROADMAP ══ */}
           {tab==="brechas" && (() => {
