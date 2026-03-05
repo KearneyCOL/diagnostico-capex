@@ -1,5 +1,9 @@
-import DVB from "./DVB.jsx";
+import DVB from './DVB'
+import Admin from './Admin'
 
-export default function App() {
-  return <DVB />;
+function App() {
+  const isAdmin = window.location.pathname === "/admin";
+  return isAdmin ? <Admin /> : <DVB />;
 }
+
+export default App
