@@ -926,11 +926,11 @@ const resetAll = () => {
                     </div>
                     <div style={{padding:"14px 16px"}}>
                       {[
-                        {n:"1", t:"Quiénes participan", d:"Líder de planeación financiera + responsables de 2–3 paquetes por sesión + representante de controlling. Máximo 6 personas para mantener el foco. No es necesario tener a todos en la misma sesión."},
-                        {n:"2", t:"Preparación previa", d:"El facilitador genera los links por paquete desde el Admin (botón 🔗 Generar link) y los comparte con los participantes antes de la sesión. Cada paquete tiene su propio link. Los participantes pueden revisar las preguntas antes del taller."},
-                        {n:"3", t:"Dinámica del taller", d:"Proyecte el diagnóstico en pantalla. Lean cada pregunta en voz alta y debatan el nivel actual antes de seleccionar la calificación. Si hay desacuerdo entre participantes, documenten el rango y usen el promedio. El debate es parte del valor del ejercicio."},
-                        {n:"4", t:"Foco de la discusión", d:"Para cada pregunta, la discusión debe responder: '¿Tenemos evidencia de que este proceso opera así hoy?' Si no hay evidencia (documento, reporte, acta), el nivel no puede ser 4 ni 5. La ausencia de evidencia es un hallazgo en sí mismo."},
-                        {n:"5", t:"Al terminar el taller", d:"Use el Heatmap para revisar el resultado en conjunto. Identifiquen colectivamente las 2–3 brechas más críticas en el tab Brechas & Roadmap. Eso define el punto de partida para el plan de acción."},
+                        {n:"1", t:"Quiénes participan", d:"El taller debe reunir a los tres roles clave del equipo de tecnología: Planeación (dueño del presupuesto y los drivers), Ingeniería (responsable de los estimados técnicos y las especificaciones) e Implementación (ejecutor del proyecto, con visión real de costos y tiempos). Sin los tres, el diagnóstico estará sesgado."},
+                        {n:"2", t:"Preparación previa", d:"El facilitador genera un link por paquete desde el Admin (🔗 Generar link) y lo comparte antes de la sesión. Se recomienda que cada participante lea las preguntas del criterio de su área con anticipación: Planeación revisa Granularidad y Forecast; Ingeniería revisa Alineación y Riesgos; Implementación revisa Aprobación y Gobernanza."},
+                        {n:"3", t:"Dinámica del taller", d:"Proyecte el diagnóstico en pantalla y lean cada pregunta en voz alta. Antes de calificar, cada rol da su perspectiva: Planeación desde el proceso documental, Ingeniería desde la viabilidad técnica, Implementación desde lo que ocurre en campo. Si hay desacuerdo, el nivel correcto es el más bajo con evidencia real, no el promedio."},
+                        {n:"4", t:"Foco de la discusión", d:"La pregunta clave para cada criterio es: '¿Tenemos evidencia de que este proceso opera así hoy — un documento, un reporte, una acta?' Si la evidencia existe solo en Planeación pero Implementación no la usa, el nivel no puede ser 4 ni 5. La brecha entre lo que se diseña y lo que se ejecuta en campo es el hallazgo más valioso del ejercicio."},
+                        {n:"5", t:"Al terminar el taller", d:"Revisen juntos el Heatmap y el tab de Brechas & Roadmap. Identifiquen las brechas donde Planeación, Ingeniería e Implementación tienen perspectivas distintas — esas diferencias son exactamente los puntos de mayor fricción en la construcción del presupuesto y los candidatos prioritarios para el plan de acción."},
                       ].map((s,i,arr)=>(
                         <div key={i} style={{display:"flex",gap:10,paddingBottom:i<arr.length-1?12:0,marginBottom:i<arr.length-1?12:0,borderBottom:i<arr.length-1?`1px solid ${C.borderSm}`:"none"}}>
                           <div style={{width:22,height:22,borderRadius:"50%",background:"#EFF6FF",border:"1px solid #BFDBFE",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>
@@ -944,7 +944,7 @@ const resetAll = () => {
                       ))}
                       <div style={{marginTop:12,padding:"9px 12px",background:"#EFF6FF",borderRadius:7,border:"1px solid #BFDBFE"}}>
                         <span style={{fontSize:11,fontWeight:700,color:"#1E3A5F"}}>💡 Recomendación: </span>
-                        <span style={{fontSize:11,color:"#1E3A5F"}}>Haga una sesión por bloque de paquetes similares (ej. sesión 1: Red Móvil + Transmisión; sesión 2: Nube Pública + Nube Telco; sesión 3: IT + UMM + UMC). Esto mantiene el nivel de detalle sin fatiga.</span>
+                        <span style={{fontSize:11,color:"#1E3A5F"}}>Organice las sesiones por bloque tecnológico: sesión 1 con el equipo de Radio (Red Móvil + Transmisión), sesión 2 con el equipo de Fija y Acceso (Red Fija + UMM + UMC), sesión 3 con el equipo de Plataformas (Nube Pública + Nube Telco + IT). Cada bloque trae contextos distintos que enriquecen el diagnóstico.</span>
                       </div>
                     </div>
                   </div>
