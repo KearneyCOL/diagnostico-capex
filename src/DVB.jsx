@@ -826,12 +826,12 @@ const resetAll = () => {
                       </div>
                     ))}
                   </div>
-                  <div style={{marginTop:18,padding:"10px 14px",borderRadius:8,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",display:"flex",alignItems:"center",gap:10}}>
-                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0}}>
-                      <span style={{fontSize:11,color:"rgba(255,255,255,0.5)",lineHeight:1}}>↓</span>
-                      <span style={{fontSize:11,color:"rgba(255,255,255,0.5)",lineHeight:1}}>↓</span>
+                  <div style={{marginTop:18,padding:"10px 14px",borderRadius:8,background:C.bgStripe,border:`1px solid ${C.borderSm}`,display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1,flexShrink:0}}>
+                      <span style={{fontSize:12,color:C.red,lineHeight:1}}>↓</span>
+                      <span style={{fontSize:12,color:C.red,lineHeight:1,opacity:0.5}}>↓</span>
                     </div>
-                    <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.75)",lineHeight:1.4,letterSpacing:"0.01em"}}>Desplázate para revisar los criterios, la escala y cómo empezar</span>
+                    <span style={{fontSize:12.5,fontWeight:600,color:C.inkMid,lineHeight:1.4}}>Desplázate para revisar los criterios, la escala y cómo empezar</span>
                   </div>
                 </div>
               </div>
