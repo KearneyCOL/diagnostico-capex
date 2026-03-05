@@ -776,7 +776,7 @@ const resetAll = () => {
                 <div style={{background:`linear-gradient(160deg,#C8281C 0%,#A81E14 100%)`, padding:"28px 24px", display:"flex", flexDirection:"column", position:"relative", overflow:"hidden"}}>
                   <div style={{position:"absolute",top:-40,right:-40,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
                   <div style={{position:"absolute",bottom:10,left:-25,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.03)"}}/>
-                  <img src={LOGO_PNG} alt="Claro" style={{height:24,width:"auto",marginBottom:20,filter:"brightness(0) saturate(100%) invert(1)",WebkitFilter:"brightness(0) saturate(100%) invert(1)"}}/>
+                  <img src={LOGO_PNG} alt="Claro" style={{height:20,width:"auto",marginBottom:18,filter:"brightness(0) invert(1)",WebkitFilter:"brightness(0) invert(1)"}}/>
                   <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:"0.18em",marginBottom:10}}>Drivers Value Budgeting</div>
                   <h1 style={{fontSize:19,fontWeight:800,color:"white",margin:"0 0 4px",lineHeight:1.25,letterSpacing:"-0.01em"}}>Diagnóstico de Madurez</h1>
                   <h2 style={{fontSize:16,fontWeight:400,fontStyle:"italic",color:"rgba(255,255,255,0.7)",margin:"0 0 16px"}}>Construcción de CAPEX</h2>
@@ -811,64 +811,6 @@ const resetAll = () => {
                       </div>
                     ))}
                   </div>
-                </div>
-              </div>
-
-              {/* ── 6 Criterios ── */}
-              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:18,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-                  <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
-                  <h2 style={{fontSize:14,fontWeight:800,margin:0}}>¿Qué evalúa el diagnóstico?</h2>
-                  <span style={{fontSize:11,color:C.inkSoft,fontStyle:"italic",marginLeft:4}}>6 criterios aplicados a cada paquete de CAPEX</span>
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-                  {CRITERIOS.map(c=>(
-                    <div key={c.key} style={{borderRadius:8,border:`1px solid ${C.border}`,overflow:"hidden"}}>
-                      <div style={{background:C.redH,padding:"7px 11px",display:"flex",alignItems:"center",gap:7}}>
-                        <div style={{width:22,height:22,borderRadius:4,background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                          <span style={{fontSize:10,fontWeight:900,color:"white"}}>{c.num}</span>
-                        </div>
-                        <span style={{fontSize:11.5,fontWeight:700,color:"white",flex:1}}>{c.label}</span>
-                        <span style={{fontSize:14}}>{c.icon}</span>
-                      </div>
-                      <div style={{padding:"9px 11px 11px"}}>
-                        <p style={{fontSize:11,color:C.inkMid,margin:0,lineHeight:1.5}}>{c.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* ── Escala ── */}
-              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:18,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-                  <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
-                  <h2 style={{fontSize:14,fontWeight:800,margin:0}}>Escala de calificación — 5 niveles</h2>
-                </div>
-                <div style={{display:"flex",gap:7}}>
-                  {C.L.map((l,i)=>(
-                    <div key={i} style={{flex:1,borderRadius:8,border:`1.5px solid ${l.border}`,overflow:"hidden"}}>
-                      <div style={{background:l.c,padding:"7px 10px",display:"flex",alignItems:"center",gap:6}}>
-                        <div style={{width:20,height:20,borderRadius:"50%",background:"rgba(255,255,255,0.22)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                          <span style={{fontSize:11,fontWeight:900,color:"white"}}>{i+1}</span>
-                        </div>
-                        <span style={{fontSize:9.5,fontWeight:800,color:"white",textTransform:"uppercase",letterSpacing:"0.07em"}}>{l.label}</span>
-                      </div>
-                      <div style={{padding:"8px 10px",background:l.bg}}>
-                        <p style={{fontSize:10.5,color:l.text,margin:0,lineHeight:1.5}}>{
-                          i===0?"No existe el proceso. Las decisiones son ad-hoc y no hay documentación ni responsables.":
-                          i===1?"El proceso existe pero es informal, inconsistente o depende de personas clave sin respaldo institucional.":
-                          i===2?"El proceso está documentado, es repetible y se aplica de forma consistente en la mayoría de los casos.":
-                          i===3?"El proceso se mide con KPIs activos, tiene revisión periódica y genera acciones correctivas.":
-                          "El proceso mejora continuamente, está institucionalizado y se usa como referencia interna."
-                        }</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{marginTop:12,padding:"10px 14px",background:C.bgStripe,borderRadius:7,border:`1px solid ${C.borderSm}`}}>
-                  <span style={{fontSize:11,fontWeight:700,color:C.ink}}>Criterio clave para calificar: </span>
-                  <span style={{fontSize:11,color:C.inkMid}}>Califique el proceso <strong>tal como opera hoy</strong>, no como debería operar ni como está planificado. Si el proceso existe en papel pero no se aplica consistentemente, el nivel correcto es 1 o 2.</span>
                 </div>
               </div>
 
@@ -949,6 +891,64 @@ const resetAll = () => {
                     </div>
                   </div>
 
+                </div>
+              </div>
+
+              {/* ── 6 Criterios ── */}
+              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:18,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                  <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
+                  <h2 style={{fontSize:14,fontWeight:800,margin:0}}>¿Qué evalúa el diagnóstico?</h2>
+                  <span style={{fontSize:11,color:C.inkSoft,fontStyle:"italic",marginLeft:4}}>6 criterios aplicados a cada paquete de CAPEX</span>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                  {CRITERIOS.map(c=>(
+                    <div key={c.key} style={{borderRadius:8,border:`1px solid ${C.border}`,overflow:"hidden"}}>
+                      <div style={{background:C.redH,padding:"7px 11px",display:"flex",alignItems:"center",gap:7}}>
+                        <div style={{width:22,height:22,borderRadius:4,background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          <span style={{fontSize:10,fontWeight:900,color:"white"}}>{c.num}</span>
+                        </div>
+                        <span style={{fontSize:11.5,fontWeight:700,color:"white",flex:1}}>{c.label}</span>
+                        <span style={{fontSize:14}}>{c.icon}</span>
+                      </div>
+                      <div style={{padding:"9px 11px 11px"}}>
+                        <p style={{fontSize:11,color:C.inkMid,margin:0,lineHeight:1.5}}>{c.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Escala ── */}
+              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:18,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+                  <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
+                  <h2 style={{fontSize:14,fontWeight:800,margin:0}}>Escala de calificación — 5 niveles</h2>
+                </div>
+                <div style={{display:"flex",gap:7}}>
+                  {C.L.map((l,i)=>(
+                    <div key={i} style={{flex:1,borderRadius:8,border:`1.5px solid ${l.border}`,overflow:"hidden"}}>
+                      <div style={{background:l.c,padding:"7px 10px",display:"flex",alignItems:"center",gap:6}}>
+                        <div style={{width:20,height:20,borderRadius:"50%",background:"rgba(255,255,255,0.22)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          <span style={{fontSize:11,fontWeight:900,color:"white"}}>{i+1}</span>
+                        </div>
+                        <span style={{fontSize:9.5,fontWeight:800,color:"white",textTransform:"uppercase",letterSpacing:"0.07em"}}>{l.label}</span>
+                      </div>
+                      <div style={{padding:"8px 10px",background:l.bg}}>
+                        <p style={{fontSize:10.5,color:l.text,margin:0,lineHeight:1.5}}>{
+                          i===0?"No existe el proceso. Las decisiones son ad-hoc y no hay documentación ni responsables.":
+                          i===1?"El proceso existe pero es informal, inconsistente o depende de personas clave sin respaldo institucional.":
+                          i===2?"El proceso está documentado, es repetible y se aplica de forma consistente en la mayoría de los casos.":
+                          i===3?"El proceso se mide con KPIs activos, tiene revisión periódica y genera acciones correctivas.":
+                          "El proceso mejora continuamente, está institucionalizado y se usa como referencia interna."
+                        }</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{marginTop:12,padding:"10px 14px",background:C.bgStripe,borderRadius:7,border:`1px solid ${C.borderSm}`}}>
+                  <span style={{fontSize:11,fontWeight:700,color:C.ink}}>Criterio clave para calificar: </span>
+                  <span style={{fontSize:11,color:C.inkMid}}>Califique el proceso <strong>tal como opera hoy</strong>, no como debería operar ni como está planificado. Si el proceso existe en papel pero no se aplica consistentemente, el nivel correcto es 1 o 2.</span>
                 </div>
               </div>
 
