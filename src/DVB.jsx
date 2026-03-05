@@ -766,6 +766,55 @@ const resetAll = () => {
           {tab==="intro" && (
             <div style={{maxWidth:900}}>
 
+              {/* ── Selector de paquete ── */}
+              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:18,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                  <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
+                  <h2 style={{fontSize:14,fontWeight:800,margin:0}}>¿Por dónde quieres empezar?</h2>
+                  <span style={{fontSize:11,color:C.inkSoft,marginLeft:4}}>Selecciona el paquete CAPEX que vas a diagnosticar</span>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+                  {RUBROS.map(r => {
+                    const sc=rs(r.key);
+                    const qa=CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[r.key][sq.id]>0).length,0);
+                    const qtot=CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
+                    const pctR=Math.round((qa/qtot)*100);
+                    const l=sc>0?lv(Math.round(sc)):null;
+                    return (
+                      <div key={r.key} onClick={()=>{setRubro(r.key);setTab("detail");}} style={{
+                        borderRadius:10,cursor:"pointer",overflow:"hidden",
+                        border:`2px solid ${sc>0?l.border:C.border}`,
+                        background:sc>0?l.bg:"white",
+                        transition:"all .18s",
+                        boxShadow:"0 1px 4px rgba(0,0,0,0.06)",
+                      }}
+                      onMouseEnter={e=>{e.currentTarget.style.borderColor=C.red;e.currentTarget.style.boxShadow="0 4px 16px rgba(218,41,28,0.14)";}}
+                      onMouseLeave={e=>{e.currentTarget.style.borderColor=sc>0?l.border:C.border;e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,0.06)";}}
+                      >
+                        {/* Top color bar */}
+                        <div style={{height:4,background:sc>0?l.c:C.borderSm}}/>
+                        <div style={{padding:"12px 14px 14px"}}>
+                          <div style={{fontSize:26,marginBottom:7}}>{r.icon}</div>
+                          <div style={{fontSize:12.5,fontWeight:800,color:C.ink,marginBottom:3,lineHeight:1.2}}>{r.label}</div>
+                          <div style={{fontSize:10,color:C.inkSoft,lineHeight:1.45,marginBottom:10}}>{r.sub}</div>
+                          {/* Progress */}
+                          <div style={{height:3,background:C.borderSm,borderRadius:99,overflow:"hidden",marginBottom:5}}>
+                            <div style={{height:"100%",width:`${pctR}%`,background:sc>0?l.c:C.borderSm,borderRadius:99,transition:"width .3s"}}/>
+                          </div>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                            <span style={{fontSize:9.5,color:C.inkSoft}}>{qa}/{qtot} resp. · {pctR}%</span>
+                            {sc>0
+                              ? <span style={{fontSize:10,fontWeight:700,color:l.c,background:l.bg,border:`1px solid ${l.border}`,padding:"1px 6px",borderRadius:4}}>{sc.toFixed(1)} {l.label}</span>
+                              : <span style={{fontSize:10,color:C.red,fontWeight:600}}>Iniciar →</span>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* ── Hero ── */}
               <div style={{
                 borderRadius:12, overflow:"hidden", marginBottom:20,
@@ -776,7 +825,9 @@ const resetAll = () => {
                 <div style={{background:`linear-gradient(160deg,#C8281C 0%,#A81E14 100%)`, padding:"28px 24px", display:"flex", flexDirection:"column", position:"relative", overflow:"hidden"}}>
                   <div style={{position:"absolute",top:-40,right:-40,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
                   <div style={{position:"absolute",bottom:10,left:-25,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.03)"}}/>
-                  <img src={LOGO_PNG} alt="Claro" style={{height:20,width:"auto",marginBottom:18,filter:"brightness(0) invert(1)",WebkitFilter:"brightness(0) invert(1)"}}/>
+                  <svg viewBox="0 0 90 28" fill="none" xmlns="http://www.w3.org/2000/svg" style={{height:22,width:"auto",display:"block",marginBottom:16}}>
+                    <text x="0" y="22" fontFamily="'VAG Rounded','Nunito','Helvetica Neue',sans-serif" fontSize="26" fontWeight="700" fill="white" letterSpacing="-0.5">claro</text>
+                  </svg>
                   <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:"0.18em",marginBottom:10}}>Drivers Value Budgeting</div>
                   <h1 style={{fontSize:19,fontWeight:800,color:"white",margin:"0 0 4px",lineHeight:1.25,letterSpacing:"-0.01em"}}>Diagnóstico de Madurez</h1>
                   <h2 style={{fontSize:16,fontWeight:400,fontStyle:"italic",color:"rgba(255,255,255,0.7)",margin:"0 0 16px"}}>Construcción de CAPEX</h2>
@@ -1259,7 +1310,9 @@ const resetAll = () => {
               {/* Score card */}
               <div style={{borderRadius:12,overflow:"hidden",marginBottom:20,boxShadow:"0 2px 20px rgba(0,0,0,0.09)",display:"grid",gridTemplateColumns:"200px 1fr"}}>
                 <div style={{background:C.redH,padding:"28px 24px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-                  <img src={LOGO_PNG} alt="Claro" style={{height:20,filter:"brightness(0) saturate(100%) invert(1)",WebkitFilter:"brightness(0) saturate(100%) invert(1)",marginBottom:14}}/>
+                  <svg viewBox="0 0 90 28" fill="none" xmlns="http://www.w3.org/2000/svg" style={{height:18,width:"auto",display:"block",marginBottom:12}}>
+                    <text x="0" y="22" fontFamily="'VAG Rounded','Nunito','Helvetica Neue',sans-serif" fontSize="26" fontWeight="700" fill="white" letterSpacing="-0.5">claro</text>
+                  </svg>
                   <div style={{fontSize:8.5,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:"0.14em",textAlign:"center",marginBottom:6}}>
                     {rFilter==="all" ? "Madurez Global" : rubroFilt?.label}
                   </div>
