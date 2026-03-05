@@ -97,7 +97,17 @@ export default function Admin() {
     <span style={{marginLeft:3, fontSize:10}}>{sortDir==="asc"?"▲":"▼"}</span>
   );
 
-  const exportLog = () => {
+  const deleteOne = async (id) => {
+    if (!window.confirm(`¿Eliminar el registro "${id}"? Esta acción no se puede deshacer.`)) return;
+    await supabase.from("dvb_assessments").delete().eq("id", id);
+    setSessions(prev => prev.filter(s => s.id !== id));
+  };
+
+  const deleteAll = async () => {
+    if (!window.confirm(`¿Eliminar TODOS los ${rows.length} registros? Esta acción no se puede deshacer.`)) return;
+    await supabase.from("dvb_assessments").delete().neq("id", "");
+    setSessions([]);
+  };
     const wb = XLSX.utils.book_new();
 
     // ── Hoja 1: Resumen por sesión ─────────────────────────────────────────
@@ -181,6 +191,13 @@ export default function Admin() {
             cursor:"pointer", fontFamily:FF,
           }}>
             ⬇ Descargar log Excel
+          </button>
+          <button onClick={deleteAll} style={{
+            padding:"5px 14px", borderRadius:7, fontSize:11, fontWeight:700,
+            cursor:"pointer", fontFamily:FF,
+            border:"1px solid #FECACA", background:"#FEF2F2", color:"#991B1B",
+          }}>
+            🗑 Eliminar todo
           </button>
           <a href="/" style={{
           padding:"5px 14px", borderRadius:7, border:`1px solid ${C.border}`,
@@ -315,14 +332,24 @@ export default function Admin() {
                     </td>
                     {/* Acción */}
                     <td style={{padding:"12px 16px"}}>
-                      <a href={`/?id=${s.id}`} style={{
-                        fontSize:11, fontWeight:600, color:C.redH,
-                        textDecoration:"none", padding:"5px 10px",
-                        border:`1px solid ${C.redBorder}`, borderRadius:6,
-                        background:C.redLight,
-                      }}>
-                        Ver →
-                      </a>
+                      <div style={{display:"flex", gap:6, alignItems:"center"}}>
+                        <a href={`/?id=${s.id}`} style={{
+                          fontSize:11, fontWeight:600, color:C.redH,
+                          textDecoration:"none", padding:"5px 10px",
+                          border:`1px solid ${C.redBorder}`, borderRadius:6,
+                          background:C.redLight, flexShrink:0,
+                        }}>
+                          Ver →
+                        </a>
+                        <button onClick={() => deleteOne(s.id)} style={{
+                          fontSize:11, fontWeight:600, padding:"5px 8px",
+                          border:"1px solid #FECACA", borderRadius:6,
+                          background:"#FEF2F2", color:"#991B1B",
+                          cursor:"pointer", fontFamily:FF, flexShrink:0,
+                        }}>
+                          🗑
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
