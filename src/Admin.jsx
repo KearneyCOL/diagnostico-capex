@@ -109,6 +109,13 @@ export default function Admin() {
     setSessions([]);
   };
 
+  const [showGen,  setShowGen]  = useState(false);
+  const [genInput, setGenInput] = useState("");
+  const [genCopied,setGenCopied]= useState(false);
+
+  const genClean = genInput.trim().toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\-_]/g,"");
+  const genUrl   = genClean ? `${window.location.origin}/?id=${genClean}` : "";
+
   const exportLog = () => {
     const wb = XLSX.utils.book_new();
 
@@ -172,6 +179,99 @@ export default function Admin() {
   return (
     <div style={{minHeight:"100vh", background:C.bg, fontFamily:FF}}>
 
+      {/* ── Modal generador de links ── */}
+      {showGen && (
+        <div style={{
+          position:"fixed", inset:0, background:"rgba(0,0,0,0.4)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          zIndex:999, fontFamily:FF,
+        }} onClick={()=>setShowGen(false)}>
+          <div style={{
+            background:"white", borderRadius:14, padding:"32px 28px", width:420,
+            boxShadow:"0 8px 48px rgba(0,0,0,0.18)", borderTop:`4px solid ${C.red}`,
+          }} onClick={e=>e.stopPropagation()}>
+            <h2 style={{fontSize:16, fontWeight:800, color:C.ink, margin:"0 0 6px"}}>
+              🔗 Generar link de diagnóstico
+            </h2>
+            <p style={{fontSize:12, color:C.inkSoft, margin:"0 0 20px", lineHeight:1.55}}>
+              Elige un nombre para identificar este diagnóstico. Puedes compartir el link generado directamente con el cliente.
+            </p>
+
+            {/* Input */}
+            <div style={{
+              display:"flex", alignItems:"center",
+              border:`1.5px solid ${C.border}`, borderRadius:8,
+              overflow:"hidden", background:C.bg, marginBottom:8,
+            }}>
+              <span style={{
+                padding:"10px 12px", fontSize:12, color:C.inkSoft,
+                background:"#F4F4F2", borderRight:`1px solid ${C.border}`,
+                flexShrink:0, userSelect:"none",
+              }}>?id=</span>
+              <input
+                autoFocus
+                value={genInput}
+                onChange={e=>{ setGenInput(e.target.value); setGenCopied(false); }}
+                placeholder="claro-colombia, nico, q2-2025…"
+                style={{
+                  flex:1, border:"none", outline:"none", padding:"10px 12px",
+                  fontSize:13, fontFamily:FF, color:C.ink, background:"transparent",
+                }}
+              />
+            </div>
+
+            {/* Preview URL */}
+            {genUrl && (
+              <div style={{
+                padding:"8px 12px", background:C.bg, borderRadius:7,
+                border:`1px solid ${C.border}`, marginBottom:16,
+                fontSize:11, color:C.inkMid, wordBreak:"break-all", lineHeight:1.5,
+              }}>
+                <span style={{color:C.inkSoft}}>Link: </span>
+                <span style={{fontWeight:600, color:C.redH}}>{genUrl}</span>
+              </div>
+            )}
+
+            {/* Buttons */}
+            <div style={{display:"flex", gap:8}}>
+              <button
+                disabled={!genUrl}
+                onClick={()=>{
+                  navigator.clipboard.writeText(genUrl).catch(()=>{});
+                  setGenCopied(true);
+                }}
+                style={{
+                  flex:1, padding:"10px", borderRadius:8, border:"none",
+                  background: genCopied ? "#16A34A" : genUrl ? C.red : C.borderSm,
+                  color:"white", fontSize:13, fontWeight:700,
+                  cursor: genUrl ? "pointer" : "default", fontFamily:FF,
+                  transition:"background .2s",
+                }}
+              >
+                {genCopied ? "✓ ¡Link copiado!" : "Copiar link"}
+              </button>
+              {genUrl && (
+                <a href={genUrl} target="_blank" rel="noreferrer" style={{
+                  padding:"10px 16px", borderRadius:8, fontFamily:FF,
+                  border:`1px solid ${C.border}`, background:"white",
+                  color:C.inkMid, fontSize:12, fontWeight:600,
+                  textDecoration:"none", display:"flex", alignItems:"center",
+                }}>
+                  Abrir →
+                </a>
+              )}
+              <button onClick={()=>{ setShowGen(false); setGenInput(""); setGenCopied(false); }} style={{
+                padding:"10px 14px", borderRadius:8, fontFamily:FF,
+                border:`1px solid ${C.border}`, background:"white",
+                color:C.inkMid, fontSize:12, cursor:"pointer",
+              }}>
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Topbar ── */}
       <header style={{
         height:52, background:C.white, borderBottom:`1px solid ${C.border}`,
@@ -187,6 +287,13 @@ export default function Admin() {
           <span style={{fontSize:11, color:C.inkSoft}}>Panel de Administración</span>
         </div>
         <div style={{display:"flex", gap:10, alignItems:"center"}}>
+          <button onClick={()=>setShowGen(true)} style={{
+            padding:"5px 14px", borderRadius:7, fontSize:11, fontWeight:700,
+            cursor:"pointer", fontFamily:FF,
+            border:`1px solid ${C.redBorder}`, background:C.redLight, color:C.redH,
+          }}>
+            🔗 Generar link
+          </button>
           <button onClick={exportLog} style={{
             padding:"5px 14px", borderRadius:7, border:"none",
             background:C.red, color:"white", fontSize:11, fontWeight:700,
