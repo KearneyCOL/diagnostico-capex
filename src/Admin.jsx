@@ -57,21 +57,42 @@ const totalQ = RUBROS.length * CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
 const lv = v => C.L[Math.max(0,Math.min(4,Math.round(v)-1))];
 
 export default function Admin() {
-  const [sessions, setSessions] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [search,   setSearch]   = useState("");
-  const [sortBy,   setSortBy]   = useState("updated_at"); // updated_at | score | pct
-  const [sortDir,  setSortDir]  = useState("desc");
+  const [sessions,   setSessions]   = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastSync,   setLastSync]   = useState(null);
+  const [search,     setSearch]     = useState("");
+  const [sortBy,     setSortBy]     = useState("updated_at"); // updated_at | score | pct
+  const [sortDir,    setSortDir]    = useState("desc");
 
-  useEffect(() => {
-    supabase
+  const fetchSessions = async (silent = false) => {
+    if (!silent) setRefreshing(true);
+    const { data, error } = await supabase
       .from("dvb_assessments")
       .select("id, data, created_at, updated_at")
-      .order("updated_at", { ascending: false })
-      .then(({ data, error }) => {
-        if (!error && data) setSessions(data);
-        setLoading(false);
-      });
+      .order("updated_at", { ascending: false });
+    if (!error && data) {
+      setSessions(data);
+      setLastSync(new Date());
+    }
+    setLoading(false);
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    fetchSessions(true);
+
+    // Suscripción en tiempo real
+    const channel = supabase
+      .channel("dvb_admin_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "dvb_assessments" },
+        () => { fetchSessions(true); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const rows = sessions
@@ -287,6 +308,24 @@ export default function Admin() {
           <span style={{fontSize:11, color:C.inkSoft}}>Panel de Administración</span>
         </div>
         <div style={{display:"flex", gap:10, alignItems:"center"}}>
+          {/* Indicador de sync */}
+          {lastSync && (
+            <span style={{fontSize:10.5, color:C.inkSoft}}>
+              {refreshing ? "⟳ Actualizando…" : `↻ ${lastSync.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`}
+            </span>
+          )}
+          <button
+            onClick={() => fetchSessions(false)}
+            disabled={refreshing}
+            title="Actualizar datos"
+            style={{
+              padding:"5px 12px", borderRadius:7, fontSize:11, fontWeight:700,
+              cursor: refreshing ? "default" : "pointer", fontFamily:FF,
+              border:`1px solid ${C.border}`, background:C.white, color:C.inkMid,
+              opacity: refreshing ? 0.6 : 1, transition:"opacity .2s",
+            }}>
+            {refreshing ? "⟳" : "↻ Actualizar"}
+          </button>
           <button onClick={()=>setShowGen(true)} style={{
             padding:"5px 14px", borderRadius:7, fontSize:11, fontWeight:700,
             cursor:"pointer", fontFamily:FF,
