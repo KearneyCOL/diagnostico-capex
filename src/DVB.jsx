@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import React from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { getIdFromUrl, setIdInUrl, loadAssessment, saveAssessment } from "./dvbStorage";
@@ -58,80 +59,124 @@ const CRITERIOS = [
     vinc:"Levantamiento: Entendimiento de estrategia e impacto en NPS, ARPU e indicadores financieros",
     ndesc:["Sin vínculo formal entre inversión y estrategia. Proyectos ad-hoc sin validación estratégica.","Lineamientos generales de negocio pero sin priorización clara por área tecnológica.","Roadmap por paquete aprobado. CAPEX alineado a hitos del plan estratégico.","Revisión periódica con ajuste presupuestal formal, documentado y con KPIs de alineación.","CAPEX integrado al ciclo de planeación estratégica con feedback loop continuo y benchmarks."],
     subs:[
-      {id:"a1",t:"¿Las inversiones CAPEX están vinculadas explícitamente a objetivos estratégicos cuantificables (NPS, ARPU, cobertura, cuota de mercado)?",p:1.2},
-      {id:"a2",t:"¿Existe un roadmap tecnológico por paquete aprobado formalmente como guía para la construcción del presupuesto CAPEX?",p:1.2},
-      {id:"a3",t:"¿Se realiza revisión periódica (al menos anual) del alineamiento entre el plan estratégico y el presupuesto CAPEX aprobado?",p:1.0},
-      {id:"a4",t:"¿Existen KPIs de alineación estratégica que midan si los proyectos CAPEX están entregando el valor comprometido al negocio?",p:1.0},
-      {id:"a5",t:"¿Las brechas entre la estrategia y la capacidad de inversión son identificadas, cuantificadas y escaladas formalmente?",p:0.9},
-      {id:"a6",t:"¿Las áreas de negocio y comerciales participan activamente en la definición y validación de los proyectos CAPEX?",p:0.8},
-      {id:"a7",t:"¿El plan CAPEX multianual (3–5 años) está alineado con la visión de largo plazo y revisado en ciclos IBP?",p:0.8},
+      {id:"a1",t:"¿Las inversiones CAPEX están vinculadas explícitamente a objetivos estratégicos cuantificables (NPS, ARPU, cobertura, cuota de mercado)?",p:1.2,
+       opp:"Vincular cada inversión a métricas de negocio permite priorizar proyectos de mayor impacto y justificar el presupuesto ante la alta dirección con evidencia concreta."},
+      {id:"a2",t:"¿Existe un roadmap tecnológico por paquete aprobado formalmente como guía para la construcción del presupuesto CAPEX?",p:1.2,
+       opp:"Contar con un roadmap por paquete elimina inversiones duplicadas o contradictorias y alinea a todas las áreas hacia una misma hoja de ruta tecnológica."},
+      {id:"a3",t:"¿Se realiza revisión periódica (al menos anual) del alineamiento entre el plan estratégico y el presupuesto CAPEX aprobado?",p:1.0,
+       opp:"Una revisión anual formal detecta a tiempo desviaciones entre la estrategia y la ejecución, evitando comprometer recursos en proyectos que ya no son prioritarios."},
+      {id:"a4",t:"¿Existen KPIs de alineación estratégica que midan si los proyectos CAPEX están entregando el valor comprometido al negocio?",p:1.0,
+       opp:"Definir KPIs de valor por proyecto convierte el CAPEX en una palanca medible de resultados, facilitando la rendición de cuentas y la mejora continua del portafolio."},
+      {id:"a5",t:"¿Las brechas entre la estrategia y la capacidad de inversión son identificadas, cuantificadas y escaladas formalmente?",p:0.9,
+       opp:"Cuantificar y escalar las brechas de inversión permite tomar decisiones informadas sobre priorización y evita comprometer proyectos estratégicos por falta de recursos."},
+      {id:"a6",t:"¿Las áreas de negocio y comerciales participan activamente en la definición y validación de los proyectos CAPEX?",p:0.8,
+       opp:"Integrar las áreas comerciales en la definición del CAPEX asegura que las inversiones respondan a necesidades reales del mercado y no solo a criterios técnicos."},
+      {id:"a7",t:"¿El plan CAPEX multianual (3–5 años) está alineado con la visión de largo plazo y revisado en ciclos IBP?",p:0.8,
+       opp:"Un plan multianual integrado al IBP permite anticipar necesidades de financiamiento, nivelar cargas de inversión y comprometer proveedores estratégicos con mayor anticipación."},
     ]},
   { num:"02", key:"granularidad", icon:"🔬", label:"Granularidad y Desagregación",
     desc:"Nivel de detalle con el que se construye el presupuesto: por proyecto, subproyecto, componente tecnológico o categoría de gasto (PxQ).",
     vinc:"Levantamiento: Nivel de granularidad · DVB: Categorías, paquetes, drivers y PxQ · Árbol CAPEX",
     ndesc:["Presupuesto agregado por área tecnológica. Sin desagregación de proyectos ni componentes.","Detalle a nivel de proyecto pero sin clasificación por tipo de activo ni categoría.","Desglose por proyecto, tipo de activo (HW, SW, civil) y categoría tecnológica definida.","Detalle por subproyecto, fase, proveedor y WBS estructurado con drivers PxQ.","Granularidad a nivel SKU/componente con trazabilidad end-to-end y OBS/WBS integrado."],
     subs:[
-      {id:"g1",t:"¿El presupuesto está desagregado hasta nivel de proyecto individual, con identificación de tipo de activo (HW, SW, obra civil)?",p:1.2},
-      {id:"g2",t:"¿Se utilizan plantillas PxQ estandarizadas por tipo de proyecto o tecnología (nodo 5G, km de fibra, rack de datacenter)?",p:1.2},
-      {id:"g3",t:"¿Existe un árbol CAPEX y catálogo vigente de categorías y paquetes que estructure el presupuesto consistentemente?",p:1.1},
-      {id:"g4",t:"¿El nivel de granularidad permite identificar inversión por región geográfica, segmento de cliente o unidad de negocio?",p:1.0},
-      {id:"g5",t:"¿Las categorías de inversión (CAPEX directo, indirecto, OPEX capitalizado) están definidas y aplicadas consistentemente?",p:1.0},
-      {id:"g6",t:"¿Se realizan reconciliaciones entre lo presupuestado PxQ y la ejecución real para calibrar precisión futura?",p:0.9},
-      {id:"g7",t:"¿Los drivers de estimación están documentados y permiten trazabilidad completa desde el monto hasta los supuestos de base?",p:0.9},
-      {id:"g8",t:"¿Se realizan análisis de sensibilidad de drivers ante cambios externos (inflación, tipo de cambio, precios de equipos)?",p:0.7},
+      {id:"g1",t:"¿El presupuesto está desagregado hasta nivel de proyecto individual, con identificación de tipo de activo (HW, SW, obra civil)?",p:1.2,
+       opp:"Desagregar hasta nivel de proyecto y tipo de activo habilita el control de ejecución por categoría, facilitando negociaciones con proveedores y detección temprana de sobrecostos."},
+      {id:"g2",t:"¿Se utilizan plantillas PxQ estandarizadas por tipo de proyecto o tecnología (nodo 5G, km de fibra, rack de datacenter)?",p:1.2,
+       opp:"Las plantillas PxQ estandarizadas reducen el tiempo de formulación del presupuesto, aumentan la comparabilidad entre ciclos y mejoran la precisión del forecast."},
+      {id:"g3",t:"¿Existe un árbol CAPEX y catálogo vigente de categorías y paquetes que estructure el presupuesto consistentemente?",p:1.1,
+       opp:"Un árbol CAPEX vigente garantiza consistencia entre áreas, facilita la consolidación y permite análisis comparativos entre paquetes y períodos."},
+      {id:"g4",t:"¿El nivel de granularidad permite identificar inversión por región geográfica, segmento de cliente o unidad de negocio?",p:1.0,
+       opp:"La segmentación geográfica o por UEN permite identificar dónde se concentra el valor generado por el CAPEX y orientar futuras inversiones hacia mercados de mayor retorno."},
+      {id:"g5",t:"¿Las categorías de inversión (CAPEX directo, indirecto, OPEX capitalizado) están definidas y aplicadas consistentemente?",p:1.0,
+       opp:"Definir y aplicar consistentemente las categorías de inversión asegura la correcta clasificación contable, evita retrabajos en auditorías y mejora la comparabilidad financiera."},
+      {id:"g6",t:"¿Se realizan reconciliaciones entre lo presupuestado PxQ y la ejecución real para calibrar precisión futura?",p:0.9,
+       opp:"Reconciliar PxQ vs. ejecución real genera aprendizaje institucional que mejora la precisión del presupuesto año a año y reduce las sorpresas en el cierre."},
+      {id:"g7",t:"¿Los drivers de estimación están documentados y permiten trazabilidad completa desde el monto hasta los supuestos de base?",p:0.9,
+       opp:"Documentar los drivers con trazabilidad completa facilita las auditorías, acelera el onboarding de nuevos equipos y permite actualizar supuestos ante cambios del entorno."},
+      {id:"g8",t:"¿Se realizan análisis de sensibilidad de drivers ante cambios externos (inflación, tipo de cambio, precios de equipos)?",p:0.7,
+       opp:"Los análisis de sensibilidad permiten preparar escenarios de contingencia ante volatilidad cambiaria o de precios, evitando ejecuciones por debajo del plan por factores externos."},
     ]},
   { num:"03", key:"aprobacion", icon:"✅", label:"Proceso de Aprobación de CAPEX",
     desc:"Solidez del proceso de identificación, evaluación, priorización y aprobación formal de proyectos que alimentan el presupuesto CAPEX.",
     vinc:"DVB: Categorías, paquetes, drivers y PxQ · Modelo de Gobierno TO-BE · Acta validación paquete piloto",
     ndesc:["Sin proceso formal. Proyectos surgidos de solicitudes no estructuradas y sin business case.","Listado de proyectos sin criterios de priorización ni evaluación de valor.","Business case estándar, criterios de priorización formales y aprobación documentada.","Proceso con scoring multicriteria: ROI, riesgo técnico, estrategia y regulatorio.","Proceso dinámico con valor esperado probabilístico y optimización de portafolio con PMO."],
     subs:[
-      {id:"ap1",t:"¿Existe un proceso formal para identificar, registrar y evaluar proyectos candidatos al presupuesto CAPEX?",p:1.2},
-      {id:"ap2",t:"¿Se elabora un business case estándar para cada proyecto antes de su inclusión, con ROI, payback y análisis de riesgo?",p:1.2},
-      {id:"ap3",t:"¿Los proyectos son priorizados mediante scoring multicriteria (ROI, impacto estratégico, riesgo técnico, regulatorio)?",p:1.1},
-      {id:"ap4",t:"¿Existen umbrales de aprobación por monto, con instancias de autorización diferenciadas por nivel (operativo/táctico/estratégico)?",p:1.1},
-      {id:"ap5",t:"¿El proceso de aprobación genera actas formales con compromisos, responsables y plazos auditables?",p:1.0},
-      {id:"ap6",t:"¿Existe un pipeline activo y actualizado de proyectos CAPEX disponible para todas las instancias de revisión?",p:0.9},
-      {id:"ap7",t:"¿Se realizan revisiones post-inversión (PIR) para validar que los proyectos aprobados entregaron el valor comprometido?",p:0.8},
+      {id:"ap1",t:"¿Existe un proceso formal para identificar, registrar y evaluar proyectos candidatos al presupuesto CAPEX?",p:1.2,
+       opp:"Formalizar el proceso de identificación asegura que ningún proyecto estratégico quede fuera del radar y que todos los candidatos compitan bajo los mismos criterios."},
+      {id:"ap2",t:"¿Se elabora un business case estándar para cada proyecto antes de su inclusión, con ROI, payback y análisis de riesgo?",p:1.2,
+       opp:"Exigir un business case con ROI y riesgo eleva la calidad de las solicitudes, filtra proyectos de bajo valor y genera una base de datos histórica de retornos comprometidos."},
+      {id:"ap3",t:"¿Los proyectos son priorizados mediante scoring multicriteria (ROI, impacto estratégico, riesgo técnico, regulatorio)?",p:1.1,
+       opp:"La priorización multicriteria reemplaza las decisiones subjetivas por un criterio objetivo y transparente, aumentando la confianza de todos los stakeholders en el portafolio aprobado."},
+      {id:"ap4",t:"¿Existen umbrales de aprobación por monto, con instancias de autorización diferenciadas por nivel (operativo/táctico/estratégico)?",p:1.1,
+       opp:"Los umbrales diferenciados agilizan la aprobación de proyectos pequeños sin saturar a la dirección, y reservan el escrutinio ejecutivo para las decisiones de mayor impacto."},
+      {id:"ap5",t:"¿El proceso de aprobación genera actas formales con compromisos, responsables y plazos auditables?",p:1.0,
+       opp:"Las actas formales crean trazabilidad de las decisiones, facilitan el seguimiento de compromisos y protegen a la organización ante cuestionamientos regulatorios o de auditoría."},
+      {id:"ap6",t:"¿Existe un pipeline activo y actualizado de proyectos CAPEX disponible para todas las instancias de revisión?",p:0.9,
+       opp:"Un pipeline visible y actualizado permite a los comités tomar decisiones con información completa, identificar oportunidades de reasignación y anticipar necesidades futuras de presupuesto."},
+      {id:"ap7",t:"¿Se realizan revisiones post-inversión (PIR) para validar que los proyectos aprobados entregaron el valor comprometido?",p:0.8,
+       opp:"Las PIR cierran el ciclo de aprendizaje del CAPEX: identifican qué supuestos fallaron, mejoran los próximos business cases y generan accountability real en los sponsors de proyectos."},
     ]},
   { num:"04", key:"forecast", icon:"📈", label:"Exactitud del Forecast",
     desc:"Precisión histórica del CAPEX presupuestado vs. ejecutado y capacidad de anticipar y gestionar desviaciones durante el año.",
     vinc:"DVB: Construcción del modelo de gestión y seguimiento · Reforecast y KPIs de ejecución por paquete",
     ndesc:["Desviaciones >40%. Sin seguimiento sistemático de ejecución vs. presupuesto.","Desviaciones 25–40%. Revisión semestral sin reforecast ni análisis de causas.","Desviaciones 15–25%. Reforecast trimestral con causas de desviación documentadas.","Desviaciones 5–15%. Reforecast mensual con KPIs de ejecución por paquete.","Desviaciones <5%. Forecast dinámico con modelos predictivos y alertas tempranas."],
     subs:[
-      {id:"f1",t:"¿Se mide sistemáticamente la desviación CAPEX presupuestado vs. ejecutado con seguimiento mensual por proyecto y paquete?",p:1.2},
-      {id:"f2",t:"¿Existe un proceso formal de reforecast con periodicidad definida que permita reprogramar ante desviaciones relevantes?",p:1.2},
-      {id:"f3",t:"¿Las causas de desviación son clasificadas y documentadas sistemáticamente (retrasos de proveedor, cambios de alcance, etc.)?",p:1.1},
-      {id:"f4",t:"¿Existen KPIs de ejecución presupuestal accesibles en tiempo real para los responsables de cada paquete tecnológico?",p:1.0},
-      {id:"f5",t:"¿Se utilizan datos históricos de ejecución (mínimo 3 años) para calibrar estimados y mejorar el forecast del siguiente ciclo?",p:1.0},
-      {id:"f6",t:"¿Existen alertas automáticas ante desviaciones relevantes (>10% acumulado) durante la ejecución del presupuesto?",p:0.9},
-      {id:"f7",t:"¿Se realizan análisis de sensibilidad ante cambios en variables clave (tipo de cambio, precios de equipos, demanda)?",p:0.7},
+      {id:"f1",t:"¿Se mide sistemáticamente la desviación CAPEX presupuestado vs. ejecutado con seguimiento mensual por proyecto y paquete?",p:1.2,
+       opp:"El seguimiento mensual por paquete convierte las desviaciones en señales tempranas de acción, evitando que pequeños retrasos se acumulen en brechas irrecuperables al cierre del año."},
+      {id:"f2",t:"¿Existe un proceso formal de reforecast con periodicidad definida que permita reprogramar ante desviaciones relevantes?",p:1.2,
+       opp:"Un reforecast periódico y formal permite reasignar recursos a proyectos con mayor avance, evitar subejecuciones que afecten el EBITDA y mantener la credibilidad del plan ante el CFO."},
+      {id:"f3",t:"¿Las causas de desviación son clasificadas y documentadas sistemáticamente (retrasos de proveedor, cambios de alcance, etc.)?",p:1.1,
+       opp:"Clasificar las causas de desviación permite atacar las raíces sistémicas: si el 60% de los retrasos vienen de un proveedor, se negocia con evidencia en lugar de intuición."},
+      {id:"f4",t:"¿Existen KPIs de ejecución presupuestal accesibles en tiempo real para los responsables de cada paquete tecnológico?",p:1.0,
+       opp:"Los KPIs en tiempo real empoderan a los responsables de paquete para corregir desviaciones sin esperar el reporte mensual, reduciendo el ciclo de respuesta de semanas a días."},
+      {id:"f5",t:"¿Se utilizan datos históricos de ejecución (mínimo 3 años) para calibrar estimados y mejorar el forecast del siguiente ciclo?",p:1.0,
+       opp:"Usar histórico de 3+ años para calibrar estimados reduce el sesgo optimista en los business cases y genera un forecast más confiable que fortalece la credibilidad ante finanzas."},
+      {id:"f6",t:"¿Existen alertas automáticas ante desviaciones relevantes (>10% acumulado) durante la ejecución del presupuesto?",p:0.9,
+       opp:"Las alertas automáticas eliminan la dependencia de reportes manuales y aseguran que las desviaciones críticas lleguen a los tomadores de decisión en el momento oportuno."},
+      {id:"f7",t:"¿Se realizan análisis de sensibilidad ante cambios en variables clave (tipo de cambio, precios de equipos, demanda)?",p:0.7,
+       opp:"Los análisis de sensibilidad ante variables externas permiten preparar planes de contingencia antes de que las crisis ocurran, reduciendo el impacto financiero de shocks externos."},
     ]},
   { num:"05", key:"riesgos", icon:"⚠", label:"Gestión de Riesgos",
     desc:"Capacidad de identificar, cuantificar y gestionar riesgos que puedan afectar el monto, cronograma o alcance del CAPEX.",
     vinc:"Levantamiento: Modelo de gestión CAPEX · DVB: Gestión y seguimiento · Registro de riesgos y planes de mitigación",
     ndesc:["Sin análisis de riesgos. Sin provisiones para contingencias en el proceso de presupuestación.","Contingencia genérica (% fijo global) sin análisis diferenciado por proyecto o paquete.","Análisis por proyecto con contingencias diferenciadas según categoría tecnológica.","Registro activo, planes de mitigación y contingencias revisadas trimestralmente.","Simulación Monte Carlo / análisis de sensibilidad integrado al proceso de aprobación."],
     subs:[
-      {id:"r1",t:"¿Existe proceso formal de identificación y análisis de riesgos que afecten el presupuesto CAPEX (retrasos, sobrecostos, regulatorio)?",p:1.2},
-      {id:"r2",t:"¿Las contingencias están diferenciadas por tipo de proyecto o paquete (no un % genérico global)?",p:1.1},
-      {id:"r3",t:"¿Se mantiene un registro activo de riesgos por proyecto con planes de mitigación y responsables asignados?",p:1.1},
-      {id:"r4",t:"¿Los riesgos y planes de mitigación son revisados con periodicidad definida en instancias formales del comité CAPEX?",p:1.0},
-      {id:"r5",t:"¿Se realizan análisis de sensibilidad ante la materialización de riesgos clave (tipo de cambio, licencias, suministro global)?",p:0.9},
-      {id:"r6",t:"¿El proceso incorpora lecciones aprendidas de proyectos anteriores para mejorar la gestión de riesgos actuales?",p:0.8},
-      {id:"r7",t:"¿Existe metodología de valoración de riesgos (probabilidad × impacto) aplicada consistentemente en todos los proyectos?",p:0.7},
+      {id:"r1",t:"¿Existe proceso formal de identificación y análisis de riesgos que afecten el presupuesto CAPEX (retrasos, sobrecostos, regulatorio)?",p:1.2,
+       opp:"Formalizar la identificación de riesgos transforma la gestión de CAPEX de reactiva a proactiva, reduciendo las sorpresas costosas y mejorando la predictibilidad del portafolio."},
+      {id:"r2",t:"¿Las contingencias están diferenciadas por tipo de proyecto o paquete (no un % genérico global)?",p:1.1,
+       opp:"Diferenciar contingencias por paquete asigna reservas donde el riesgo es real, evitando que proyectos de bajo riesgo consuman buffers que necesitan los proyectos complejos."},
+      {id:"r3",t:"¿Se mantiene un registro activo de riesgos por proyecto con planes de mitigación y responsables asignados?",p:1.1,
+       opp:"Un registro activo con responsables nombrados convierte los riesgos en compromisos gestionables, reduciendo el tiempo de respuesta ante la materialización de un evento adverso."},
+      {id:"r4",t:"¿Los riesgos y planes de mitigación son revisados con periodicidad definida en instancias formales del comité CAPEX?",p:1.0,
+       opp:"La revisión periódica de riesgos en comité asegura que los planes de mitigación evolucionen con el proyecto y que la alta dirección tenga visibilidad de las amenazas más críticas."},
+      {id:"r5",t:"¿Se realizan análisis de sensibilidad ante la materialización de riesgos clave (tipo de cambio, licencias, suministro global)?",p:0.9,
+       opp:"Cuantificar el impacto de riesgos clave permite negociar coberturas cambiarias, anticipar compras de equipos estratégicos y diseñar planes B con costo conocido antes de necesitarlos."},
+      {id:"r6",t:"¿El proceso incorpora lecciones aprendidas de proyectos anteriores para mejorar la gestión de riesgos actuales?",p:0.8,
+       opp:"Institucionalizar lecciones aprendidas evita repetir los mismos errores costosos ciclo a ciclo y construye una memoria organizacional que acelera la madurez del equipo de planificación."},
+      {id:"r7",t:"¿Existe metodología de valoración de riesgos (probabilidad × impacto) aplicada consistentemente en todos los proyectos?",p:0.7,
+       opp:"Una metodología uniforme de valoración permite comparar riesgos entre proyectos heterogéneos, priorizando la atención y recursos de mitigación donde el valor en riesgo es mayor."},
     ]},
   { num:"06", key:"gobernanza", icon:"🏛", label:"Gobernanza CAPEX",
     desc:"Madurez del modelo de gobernanza para aprobación, seguimiento, reprogramación y cierre de proyectos CAPEX por paquete tecnológico.",
     vinc:"DVB: Proceso óptimo CAPEX, RACI y Torre de Control integrado a IBP · Modelo de gobierno TO-BE",
     ndesc:["Sin instancias formales. Decisiones ad-hoc sin trazabilidad ni RACI definida.","Comité esporádico. Actas sin seguimiento de acuerdos ni responsables.","Comité CAPEX periódico con roles, umbrales de aprobación y actas formales.","Governance multinivel (operativo, táctico, estratégico) con dashboards integrados.","Governance con PMO, revisiones de valor en hitos clave y ciclos IBP institucionalizados."],
     subs:[
-      {id:"go1",t:"¿Existe un modelo de gobernanza CAPEX formalizado con RACI para cada etapa del ciclo presupuestal?",p:1.2},
-      {id:"go2",t:"¿Se realizan comités CAPEX periódicos con umbrales de aprobación por nivel de inversión y actas formales?",p:1.2},
-      {id:"go3",t:"¿Existe una Torre de Control centralizada que consolide, valide y priorice el portfolio CAPEX?",p:1.2},
-      {id:"go4",t:"¿El proceso de governance CAPEX está integrado formalmente con los ciclos de IBP y el calendario presupuestal?",p:1.1},
-      {id:"go5",t:"¿El modelo incluye instancias diferenciadas por nivel (operativo, táctico, estratégico) con dashboards específicos?",p:1.0},
-      {id:"go6",t:"¿Existe proceso formal de cierre de proyectos con reconciliación financiera y captura de lecciones aprendidas?",p:0.9},
-      {id:"go7",t:"¿Hay un calendario presupuestal oficial con hitos de entrega, revisión y aprobación respetado por todas las áreas?",p:0.8},
-      {id:"go8",t:"¿Los acuerdos de comités CAPEX tienen responsables nombrados y se verifica su cumplimiento en la siguiente sesión?",p:0.7},
+      {id:"go1",t:"¿Existe un modelo de gobernanza CAPEX formalizado con RACI para cada etapa del ciclo presupuestal?",p:1.2,
+       opp:"Un RACI formalizado elimina ambigüedades sobre quién decide y quién ejecuta, reduciendo cuellos de botella, retrabajos y conflictos entre áreas durante el ciclo presupuestal."},
+      {id:"go2",t:"¿Se realizan comités CAPEX periódicos con umbrales de aprobación por nivel de inversión y actas formales?",p:1.2,
+       opp:"Los comités periódicos con umbrales claros aceleran la toma de decisiones, evitan que proyectos se paralicen por falta de aprobación y generan un registro auditable de cada decisión."},
+      {id:"go3",t:"¿Existe una Torre de Control centralizada que consolide, valide y priorice el portfolio CAPEX?",p:1.2,
+       opp:"Una Torre de Control centralizada da visibilidad end-to-end del portafolio, permite detectar solapamientos entre proyectos y habilita la reasignación ágil de recursos ante imprevistos."},
+      {id:"go4",t:"¿El proceso de governance CAPEX está integrado formalmente con los ciclos de IBP y el calendario presupuestal?",p:1.1,
+       opp:"Integrar el governance al IBP sincroniza las decisiones de inversión con los ciclos de demanda y financieros, eliminando el desacople entre lo que se planea y lo que se ejecuta."},
+      {id:"go5",t:"¿El modelo incluye instancias diferenciadas por nivel (operativo, táctico, estratégico) con dashboards específicos?",p:1.0,
+       opp:"Los dashboards diferenciados por nivel aseguran que cada instancia reciba la información relevante para su rol, reduciendo el ruido en los comités ejecutivos y agilizando las decisiones operativas."},
+      {id:"go6",t:"¿Existe proceso formal de cierre de proyectos con reconciliación financiera y captura de lecciones aprendidas?",p:0.9,
+       opp:"El cierre formal de proyectos asegura que los activos sean activados correctamente, que las contingencias no usadas sean liberadas y que el aprendizaje quede documentado para el próximo ciclo."},
+      {id:"go7",t:"¿Hay un calendario presupuestal oficial con hitos de entrega, revisión y aprobación respetado por todas las áreas?",p:0.8,
+       opp:"Un calendario oficial respetado elimina las entregas tardías que comprimen los tiempos de revisión, mejora la calidad del presupuesto consolidado y reduce el estrés del cierre."},
+      {id:"go8",t:"¿Los acuerdos de comités CAPEX tienen responsables nombrados y se verifica su cumplimiento en la siguiente sesión?",p:0.7,
+       opp:"Verificar el cumplimiento de acuerdos sesión a sesión convierte el comité en un mecanismo real de rendición de cuentas, no solo un foro de reporte, aumentando la velocidad de ejecución."},
     ]},
 ];
 
@@ -1241,14 +1286,18 @@ const resetAll = () => {
                 });
               });
             });
-            const top10 = [...brechas].sort((a,b) => b.gap-a.gap || a.score-b.score).slice(0,10);
+
+            // Filtro por paquete — usa el estado del rubro activo o "all"
+            const [bFilter, setBFilter] = React.useState("all");
+            const brechasFilt = bFilter === "all" ? brechas : brechas.filter(b => b.rubro.key === bFilter);
+
+            const top10 = [...brechasFilt].sort((a,b) => b.gap-a.gap || a.score-b.score).slice(0,10);
             const sinData = brechas.length === 0;
             const FASES = [
               {label:"Quick Wins",  sub:"0–3 meses",  color:"#16A34A", bg:"#F0FDF4", border:"#BBF7D0", icon:"⚡", items: top10.filter(b=>b.score<=2)},
               {label:"Corto Plazo", sub:"3–6 meses",  color:"#D97706", bg:"#FFFBEB", border:"#FDE68A", icon:"📅", items: top10.filter(b=>b.score===3)},
               {label:"Largo Plazo", sub:"6–18 meses", color:"#2563EB", bg:"#EFF6FF", border:"#BFDBFE", icon:"🎯", items: top10.filter(b=>b.score>=4&&b.gap>0)},
             ];
-            // Si una fase queda vacía, distribuir equitativamente
             const any = FASES.some(f=>f.items.length>0);
             if (!any && top10.length) {
               FASES[0].items = top10.slice(0,3);
@@ -1257,9 +1306,35 @@ const resetAll = () => {
             }
             return (
               <div style={{maxWidth:1060}}>
-                <div style={{marginBottom:24}}>
-                  <h2 style={{fontSize:18, fontWeight:800, margin:"0 0 4px", letterSpacing:"-0.02em"}}>Brechas & Roadmap</h2>
-                  <p style={{fontSize:12, color:C.inkMid, margin:0}}>Basado en {brechas.length} respuestas · Top 10 brechas ordenadas por gap al nivel óptimo (5)</p>
+                <div style={{marginBottom:20, display:"flex", alignItems:"flex-end", justifyContent:"space-between", flexWrap:"wrap", gap:12}}>
+                  <div>
+                    <h2 style={{fontSize:18, fontWeight:800, margin:"0 0 4px", letterSpacing:"-0.02em"}}>Brechas & Roadmap</h2>
+                    <p style={{fontSize:12, color:C.inkMid, margin:0}}>
+                      {bFilter==="all" ? `General · ${brechas.length} respuestas` : `${RUBROS.find(r=>r.key===bFilter)?.label} · ${brechasFilt.length} respuestas`}
+                      {" · "}Top 10 brechas ordenadas por gap al nivel óptimo (5)
+                    </p>
+                  </div>
+                  {/* Filtro */}
+                  <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
+                    <button onClick={()=>setBFilter("all")} style={{
+                      padding:"5px 12px", borderRadius:7, fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:FF,
+                      border:`1.5px solid ${bFilter==="all" ? C.red : C.border}`,
+                      background: bFilter==="all" ? C.redLight : C.white,
+                      color: bFilter==="all" ? C.redH : C.inkMid,
+                    }}>
+                      🏢 General (Claro)
+                    </button>
+                    {RUBROS.map(r => (
+                      <button key={r.key} onClick={()=>setBFilter(r.key)} style={{
+                        padding:"5px 12px", borderRadius:7, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:FF,
+                        border:`1.5px solid ${bFilter===r.key ? C.red : C.border}`,
+                        background: bFilter===r.key ? C.redLight : C.white,
+                        color: bFilter===r.key ? C.redH : C.inkMid,
+                      }}>
+                        {r.icon} {r.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 {sinData ? (
                   <div style={{padding:48, textAlign:"center", color:C.inkSoft, background:C.white, borderRadius:12, border:`1px solid ${C.border}`}}>
@@ -1294,6 +1369,12 @@ const resetAll = () => {
                                   <span style={{fontSize:10, fontWeight:700, color:l.c, flexShrink:0}}>{b.score}/5</span>
                                   <span style={{fontSize:10, color:"#DC2626", fontWeight:700, flexShrink:0}}>gap −{b.gap}</span>
                                 </div>
+                                {b.sq.opp && (
+                                  <div style={{marginTop:6, padding:"7px 10px", background:"#F0FDF4", borderRadius:6, border:"1px solid #BBF7D0"}}>
+                                    <span style={{fontSize:10, fontWeight:700, color:"#16A34A"}}>💡 Oportunidad: </span>
+                                    <span style={{fontSize:11, color:"#166534", lineHeight:1.45}}>{b.sq.opp}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           );
@@ -1322,11 +1403,17 @@ const resetAll = () => {
                                   <div style={{width:5, height:5, borderRadius:"50%", background:f.color, flexShrink:0, marginTop:6}}/>
                                   <div style={{flex:1}}>
                                     <div style={{fontSize:10, color:f.color, fontWeight:700, marginBottom:2}}>{b.rubro.icon} {b.rubro.label} · {b.crit.label}</div>
-                                    <p style={{fontSize:11.5, color:C.ink, margin:"0 0 3px", lineHeight:1.4}}>{b.sq.t}</p>
-                                    <div style={{fontSize:10, color:C.inkSoft}}>
+                                    <p style={{fontSize:11.5, color:C.ink, margin:"0 0 4px", lineHeight:1.4}}>{b.sq.t}</p>
+                                    <div style={{fontSize:10, color:C.inkSoft, marginBottom: b.sq.opp ? 5 : 0}}>
                                       Nivel actual: <span style={{fontWeight:700, color:lv(b.score).c}}>{b.score} – {lv(b.score).label}</span>
                                       {" "}→ Meta: <span style={{fontWeight:700, color:f.color}}>5 – Optimizado</span>
                                     </div>
+                                    {b.sq.opp && (
+                                      <div style={{padding:"6px 9px", background:"white", borderRadius:5, border:`1px solid ${f.border}`}}>
+                                        <span style={{fontSize:10, fontWeight:700, color:f.color}}>💡 </span>
+                                        <span style={{fontSize:10.5, color:C.inkMid, lineHeight:1.4}}>{b.sq.opp}</span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               ))
