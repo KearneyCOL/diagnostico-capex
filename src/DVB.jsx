@@ -327,6 +327,7 @@ export default function DVB() {
   const [instrOpen,  setInstrOpen]  = useState(false); // instrucciones desplegables
   const saveTimer    = useRef(null);
   const channelRef   = useRef(null);
+  const contentRef   = useRef(null);
 
   // Presence — se activa cuando ya tenemos assessId
   useEffect(() => {
@@ -604,7 +605,7 @@ const resetAll = () => {
         {/* TABS */}
         <div style={{padding:"10px 10px 4px"}}>
           {TABS.map(({k,l}) => (
-            <button key={k} onClick={()=>setTab(k)} style={{
+            <button key={k} onClick={()=>{setTab(k);contentRef.current?.scrollTo({top:0,behavior:"smooth"});}} style={{
               width:"100%", padding:"8px 10px",
               border:"none", borderRadius:6,
               background: tab===k ? C.redLight : "transparent",
@@ -775,7 +776,7 @@ const resetAll = () => {
         </header>
 
         {/* CONTENT */}
-        <div style={{flex:1, overflowY:"auto", padding:"28px 32px"}}>
+        <div ref={contentRef} style={{flex:1, overflowY:"auto", padding:"28px 32px"}}>
 
           {/* ══════════════════════════ INTRO ══ */}
           {tab==="intro" && (
@@ -799,7 +800,7 @@ const resetAll = () => {
                   <p style={{fontSize:11,color:"rgba(255,255,255,0.5)",margin:0,lineHeight:1.6}}>8 Paquetes · 6 Criterios<br/>5 Niveles · 48 Preguntas</p>
                   <div style={{marginTop:"auto",paddingTop:20,display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
                     {RUBROS.map(r=>(
-                      <div key={r.key} onClick={()=>{setRubro(r.key);setTab("detail");}} style={{background:"rgba(0,0,0,0.18)",borderRadius:5,padding:"5px 7px",fontSize:9.5,fontWeight:600,color:"rgba(255,255,255,0.8)",cursor:"pointer",border:"1px solid rgba(255,255,255,0.1)",textAlign:"center"}}>
+                      <div key={r.key} onClick={()=>{setRubro(r.key);setTab("detail");contentRef.current?.scrollTo({top:0,behavior:"smooth"});}} style={{background:"rgba(0,0,0,0.18)",borderRadius:5,padding:"5px 7px",fontSize:9.5,fontWeight:600,color:"rgba(255,255,255,0.8)",cursor:"pointer",border:"1px solid rgba(255,255,255,0.1)",textAlign:"center"}}>
                         {r.icon} {r.label}
                       </div>
                     ))}
@@ -826,12 +827,15 @@ const resetAll = () => {
                       </div>
                     ))}
                   </div>
-                  <div style={{marginTop:18,padding:"10px 14px",borderRadius:8,background:C.bgStripe,border:`1px solid ${C.borderSm}`,display:"flex",alignItems:"center",gap:10}}>
-                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1,flexShrink:0}}>
-                      <span style={{fontSize:12,color:C.red,lineHeight:1}}>↓</span>
-                      <span style={{fontSize:12,color:C.red,lineHeight:1,opacity:0.5}}>↓</span>
+                  <div style={{marginTop:18,padding:"12px 16px",borderRadius:8,background:C.bgStripe,border:`1px solid ${C.borderSm}`,display:"flex",flexDirection:"column",alignItems:"center",gap:6,textAlign:"center"}}>
+                    <span style={{fontSize:13,color:C.inkMid,lineHeight:1.5}}>
+                      Desplázate para revisar los <strong style={{color:C.ink}}>criterios</strong>, la <strong style={{color:C.ink}}>escala de calificación</strong> y cómo empezar
+                    </span>
+                    <div style={{display:"flex",gap:3,alignItems:"center"}}>
+                      <span style={{fontSize:14,color:C.red}}>↓</span>
+                      <span style={{fontSize:12,color:C.red,opacity:0.5}}>↓</span>
+                      <span style={{fontSize:10,color:C.red,opacity:0.25}}>↓</span>
                     </div>
-                    <span style={{fontSize:12.5,fontWeight:600,color:C.inkMid,lineHeight:1.4}}>Desplázate para revisar los criterios, la escala y cómo empezar</span>
                   </div>
                 </div>
               </div>
@@ -997,7 +1001,7 @@ const resetAll = () => {
                   {(() => {
                     const r = RUBROS.find(r=>r.key===introRubro);
                     return (
-                      <button onClick={()=>{setRubro(introRubro);setTab("detail");}} style={{
+                      <button onClick={()=>{setRubro(introRubro);setTab("detail");contentRef.current?.scrollTo({top:0,behavior:"smooth"});}} style={{
                         padding:"8px 20px",borderRadius:8,border:"none",
                         background:C.red,color:"white",fontSize:12,fontWeight:700,
                         cursor:"pointer",fontFamily:FF,display:"flex",alignItems:"center",gap:6,
@@ -1059,10 +1063,10 @@ const resetAll = () => {
               </div>
 
               <div style={{display:"flex",justifyContent:"center",gap:10,paddingBottom:4}}>
-                <button onClick={()=>setTab("detail")} style={{padding:"11px 30px",background:C.red,color:"white",border:"none",borderRadius:7,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:FF,letterSpacing:"0.02em"}}>
+                <button onClick={()=>{setTab("detail");contentRef.current?.scrollTo({top:0,behavior:"smooth"});}} style={{padding:"11px 30px",background:C.red,color:"white",border:"none",borderRadius:7,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:FF,letterSpacing:"0.02em"}}>
                   Comenzar Diagnóstico →
                 </button>
-                <button onClick={()=>setTab("heatmap")} style={{padding:"11px 22px",background:C.white,color:C.redH,border:`1.5px solid ${C.border}`,borderRadius:7,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:FF}}>
+                <button onClick={()=>{setTab("heatmap");contentRef.current?.scrollTo({top:0,behavior:"smooth"});}} style={{padding:"11px 22px",background:C.white,color:C.redH,border:`1.5px solid ${C.border}`,borderRadius:7,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:FF}}>
                   Ver Heatmap
                 </button>
               </div>
@@ -1276,13 +1280,13 @@ const resetAll = () => {
                       const sc=rs(r.key);
                       return (
                         <tr key={r.key} style={{background:i%2===0?C.white:C.bgStripe}}>
-                          <td onClick={()=>{setRubro(r.key);setTab("detail");}} style={{padding:"10px 14px", fontSize:12, fontWeight:600, borderBottom:`1px solid ${C.borderSm}`, cursor:"pointer", whiteSpace:"nowrap"}}>
+                          <td onClick={()=>{setRubro(r.key);setTab("detail");contentRef.current?.scrollTo({top:0,behavior:"smooth"});}} style={{padding:"10px 14px", fontSize:12, fontWeight:600, borderBottom:`1px solid ${C.borderSm}`, cursor:"pointer", whiteSpace:"nowrap"}}>
                             {r.icon} {r.label}
                           </td>
                           {CRITERIOS.map(c => {
                             const v=cs(r.key,c.key), l=v>0?lv(Math.round(v)):null;
                             return (
-                              <td key={c.key} onClick={()=>{setRubro(r.key);setExp(c.key);setTab("detail");}} style={{
+                              <td key={c.key} onClick={()=>{setRubro(r.key);setExp(c.key);setTab("detail");contentRef.current?.scrollTo({top:0,behavior:"smooth"});}} style={{
                                 padding:"9px 6px", textAlign:"center",
                                 borderBottom:`1px solid ${C.borderSm}`,
                                 background: v>0 ? l.bg+"cc" : "transparent",
