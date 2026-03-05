@@ -324,6 +324,7 @@ export default function DVB() {
   const [bFilter,    setBFilter]    = useState("all"); // filtro tab brechas // contador de presencia
   const [rFilter,    setRFilter]    = useState("all"); // filtro tab resumen
   const [introRubro, setIntroRubro] = useState("red_movil"); // paquete seleccionado en intro
+  const [instrOpen,  setInstrOpen]  = useState(false); // instrucciones desplegables
   const saveTimer    = useRef(null);
   const channelRef   = useRef(null);
 
@@ -825,137 +826,30 @@ const resetAll = () => {
                       </div>
                     ))}
                   </div>
-                </div>
-              </div>
-
-              {/* ── Selector de paquete ── */}
-              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:18,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-                  <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
-                  <h2 style={{fontSize:14,fontWeight:800,margin:0}}>Selecciona el paquete que vas a diagnosticar</h2>
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
-                  {RUBROS.map(r => {
-                    const sc=rs(r.key);
-                    const qa=CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[r.key][sq.id]>0).length,0);
-                    const qtot=CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
-                    const pctR=Math.round((qa/qtot)*100);
-                    const l=sc>0?lv(Math.round(sc)):null;
-                    const isSelected = r.key===rubro;
-                    return (
-                      <div key={r.key} onClick={()=>setRubro(r.key)} style={{
-                        borderRadius:10,cursor:"pointer",overflow:"hidden",
-                        border:`2px solid ${isSelected?C.red:(sc>0?l.border:C.border)}`,
-                        background:isSelected?"#FFF5F5":(sc>0?l.bg:"white"),
-                        transition:"all .18s",
-                        boxShadow:isSelected?"0 4px 18px rgba(218,41,28,0.18)":"0 1px 4px rgba(0,0,0,0.06)",
-                        transform:isSelected?"translateY(-2px)":"none",
-                      }}>
-                        {/* Top color bar */}
-                        <div style={{height:5,background:isSelected?C.red:(sc>0?l.c:C.borderSm)}}/>
-                        <div style={{padding:"12px 14px 14px"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
-                            <span style={{fontSize:28}}>{r.icon}</span>
-                            {isSelected && <span style={{fontSize:9,fontWeight:800,color:C.red,background:"#FFE4E4",border:"1px solid #FECACA",padding:"2px 7px",borderRadius:4,letterSpacing:"0.05em"}}>ACTIVO</span>}
-                          </div>
-                          <div style={{fontSize:12.5,fontWeight:800,color:isSelected?C.redH:C.ink,marginBottom:3,lineHeight:1.2}}>{r.label}</div>
-                          <div style={{fontSize:10,color:C.inkSoft,lineHeight:1.45,marginBottom:10}}>{r.sub}</div>
-                          {/* Progress */}
-                          <div style={{height:3,background:C.borderSm,borderRadius:99,overflow:"hidden",marginBottom:5}}>
-                            <div style={{height:"100%",width:`${pctR}%`,background:isSelected?C.red:(sc>0?l.c:C.borderSm),borderRadius:99}}/>
-                          </div>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                            <span style={{fontSize:9.5,color:C.inkSoft}}>{qa}/{qtot} resp. · {pctR}%</span>
-                            {sc>0
-                              ? <span style={{fontSize:10,fontWeight:700,color:isSelected?C.redH:l.c,background:isSelected?"#FFE4E4":l.bg,border:`1px solid ${isSelected?"#FECACA":l.border}`,padding:"1px 6px",borderRadius:4}}>{sc.toFixed(1)} {l.label}</span>
-                              : <span style={{fontSize:10,color:isSelected?C.red:C.inkSoft,fontWeight:isSelected?700:400}}>{isSelected?"← Comenzar aquí":"Sin respuestas"}</span>
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{marginTop:14,padding:"9px 14px",background:C.bgStripe,borderRadius:7,border:`1px solid ${C.borderSm}`,display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontSize:13}}>💡</span>
-                  <p style={{fontSize:11,color:C.inkMid,margin:0}}>El paquete seleccionado (marcado como <strong>ACTIVO</strong>) es el que se evaluará cuando vayas al tab <strong>Diagnóstico</strong>. Puedes cambiarlo en cualquier momento desde el menú desplegable de la barra superior.</p>
-                </div>
-              </div>
-
-              {/* ── Selector de paquete ── */}
-              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:18,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:10}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
-                    <h2 style={{fontSize:14,fontWeight:800,margin:0}}>Selecciona el paquete que vas a diagnosticar</h2>
+                  <div style={{marginTop:16,display:"flex",alignItems:"center",gap:6,color:C.inkSoft}}>
+                    <span style={{fontSize:13}}>↓</span>
+                    <span style={{fontSize:11,fontStyle:"italic",color:C.inkSoft}}>Desplázate para revisar los criterios y cómo empezar</span>
                   </div>
-                  {(() => {
-                    const r = RUBROS.find(r=>r.key===introRubro);
-                    const sc = rs(introRubro);
-                    const l = sc>0?lv(Math.round(sc)):null;
-                    return (
-                      <button onClick={()=>{setRubro(introRubro);setTab("detail");}} style={{
-                        padding:"8px 20px",borderRadius:8,border:"none",
-                        background:C.red,color:"white",fontSize:12,fontWeight:700,
-                        cursor:"pointer",fontFamily:FF,display:"flex",alignItems:"center",gap:6,
-                      }}>
-                        Ir a {r?.icon} {r?.label} →
-                      </button>
-                    );
-                  })()}
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
-                  {RUBROS.map(r => {
-                    const sc=rs(r.key);
-                    const qa=CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[r.key][sq.id]>0).length,0);
-                    const qtot=CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
-                    const pctR=Math.round((qa/qtot)*100);
-                    const l=sc>0?lv(Math.round(sc)):null;
-                    const isSelected = introRubro===r.key;
-                    return (
-                      <div key={r.key} onClick={()=>{setIntroRubro(r.key);setRubro(r.key);}} style={{
-                        borderRadius:10,cursor:"pointer",overflow:"hidden",
-                        border:`2px solid ${isSelected?C.red:sc>0?l.border:C.border}`,
-                        background:isSelected?C.redLight:sc>0?l.bg:"white",
-                        transition:"all .18s",
-                        boxShadow:isSelected?"0 4px 16px rgba(218,41,28,0.18)":"0 1px 4px rgba(0,0,0,0.06)",
-                      }}
-                      onMouseEnter={e=>{if(!isSelected){e.currentTarget.style.borderColor=C.red;e.currentTarget.style.boxShadow="0 4px 12px rgba(218,41,28,0.12)";}}}
-                      onMouseLeave={e=>{if(!isSelected){e.currentTarget.style.borderColor=sc>0?l.border:C.border;e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,0.06)";}}}
-                      >
-                        <div style={{height:4,background:isSelected?C.red:sc>0?l.c:C.borderSm}}/>
-                        <div style={{padding:"12px 14px 14px"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
-                            <span style={{fontSize:26}}>{r.icon}</span>
-                            {isSelected && <span style={{fontSize:9,fontWeight:800,color:C.redH,background:C.redLight,border:`1px solid ${C.redBorder}`,padding:"2px 7px",borderRadius:99}}>Seleccionado</span>}
-                          </div>
-                          <div style={{fontSize:12.5,fontWeight:800,color:isSelected?C.redH:C.ink,marginBottom:3,lineHeight:1.2}}>{r.label}</div>
-                          <div style={{fontSize:10,color:C.inkSoft,lineHeight:1.45,marginBottom:10}}>{r.sub}</div>
-                          <div style={{height:3,background:C.borderSm,borderRadius:99,overflow:"hidden",marginBottom:5}}>
-                            <div style={{height:"100%",width:`${pctR}%`,background:isSelected?C.red:sc>0?l.c:C.borderSm,borderRadius:99}}/>
-                          </div>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                            <span style={{fontSize:9.5,color:C.inkSoft}}>{qa}/{qtot} · {pctR}%</span>
-                            {sc>0
-                              ? <span style={{fontSize:10,fontWeight:700,color:l.c,background:l.bg,border:`1px solid ${l.border}`,padding:"1px 6px",borderRadius:4}}>{sc.toFixed(1)} {l.label}</span>
-                              : <span style={{fontSize:10,color:C.inkSoft}}>Sin respuestas</span>
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
               </div>
 
               {/* ── Instructivo ── */}
-              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:18,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18}}>
-                  <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
-                  <h2 style={{fontSize:14,fontWeight:800,margin:0}}>¿Cómo completar el diagnóstico?</h2>
+              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,marginBottom:18,boxShadow:"0 1px 6px rgba(0,0,0,0.05)",overflow:"hidden"}}>
+                <div
+                  onClick={()=>setInstrOpen(o=>!o)}
+                  style={{padding:"16px 22px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",userSelect:"none",background:instrOpen?C.redLight:C.white,borderLeft:instrOpen?`4px solid ${C.red}`:"4px solid transparent",transition:"all .15s"}}
+                >
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
+                    <h2 style={{fontSize:14,fontWeight:800,margin:0}}>¿Cómo completar el diagnóstico?</h2>
+                    <span style={{fontSize:11,color:C.inkSoft,fontStyle:"italic",marginLeft:4}}>Cuestionario individual o taller en grupo</span>
+                  </div>
+                  <span style={{color:C.inkSoft,fontSize:12,transform:instrOpen?"rotate(180deg)":"none",transition:"transform .2s",flexShrink:0}}>▾</span>
                 </div>
 
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                {instrOpen && (
+                <div style={{padding:"0 22px 20px"}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,paddingTop:16}}>
 
                   {/* Modalidad 1: Individual */}
                   <div style={{borderRadius:10,border:`1.5px solid ${C.border}`,overflow:"hidden"}}>
@@ -1026,6 +920,8 @@ const resetAll = () => {
                   </div>
 
                 </div>
+                </div>
+                )}
               </div>
 
               {/* ── 6 Criterios ── */}
@@ -1087,6 +983,78 @@ const resetAll = () => {
               </div>
 
               {/* CTA */}
+              {/* ── Selector de paquete ── */}
+              <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:18,boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:10}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{width:3,height:15,background:C.red,borderRadius:99}}/>
+                    <h2 style={{fontSize:14,fontWeight:800,margin:0}}>¿Por dónde quieres comenzar?</h2>
+                    <span style={{fontSize:11,color:C.inkSoft,fontStyle:"italic",marginLeft:4}}>Selecciona el paquete a diagnosticar</span>
+                  </div>
+                  {(() => {
+                    const r = RUBROS.find(r=>r.key===introRubro);
+                    return (
+                      <button onClick={()=>{setRubro(introRubro);setTab("detail");}} style={{
+                        padding:"8px 20px",borderRadius:8,border:"none",
+                        background:C.red,color:"white",fontSize:12,fontWeight:700,
+                        cursor:"pointer",fontFamily:FF,display:"flex",alignItems:"center",gap:6,
+                      }}>
+                        Ir a {r?.icon} {r?.label} →
+                      </button>
+                    );
+                  })()}
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+                  {RUBROS.map(r => {
+                    const sc=rs(r.key);
+                    const qa=CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[r.key][sq.id]>0).length,0);
+                    const qtot=CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
+                    const pctR=Math.round((qa/qtot)*100);
+                    const l=sc>0?lv(Math.round(sc)):null;
+                    const isSelected = introRubro===r.key;
+                    return (
+                      <div key={r.key}
+                        onClick={(e)=>{
+                          const y = window.scrollY;
+                          setIntroRubro(r.key);
+                          setRubro(r.key);
+                          requestAnimationFrame(()=>window.scrollTo({top:y,behavior:"instant"}));
+                        }}
+                        style={{
+                          borderRadius:10,cursor:"pointer",overflow:"hidden",
+                          border:`2px solid ${isSelected?C.red:sc>0?l.border:C.border}`,
+                          background:isSelected?C.redLight:sc>0?l.bg:"white",
+                          transition:"all .18s",
+                          boxShadow:isSelected?"0 4px 16px rgba(218,41,28,0.18)":"0 1px 4px rgba(0,0,0,0.06)",
+                        }}
+                        onMouseEnter={e=>{if(!isSelected){e.currentTarget.style.borderColor=C.red;e.currentTarget.style.boxShadow="0 4px 12px rgba(218,41,28,0.12)";}}}
+                        onMouseLeave={e=>{if(!isSelected){e.currentTarget.style.borderColor=sc>0?l.border:C.border;e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,0.06)";}}}
+                      >
+                        <div style={{height:4,background:isSelected?C.red:sc>0?l.c:C.borderSm}}/>
+                        <div style={{padding:"12px 14px 14px"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                            <span style={{fontSize:26}}>{r.icon}</span>
+                            {isSelected && <span style={{fontSize:9,fontWeight:800,color:C.redH,background:C.redLight,border:`1px solid ${C.redBorder}`,padding:"2px 7px",borderRadius:99}}>Seleccionado</span>}
+                          </div>
+                          <div style={{fontSize:12.5,fontWeight:800,color:isSelected?C.redH:C.ink,marginBottom:3,lineHeight:1.2}}>{r.label}</div>
+                          <div style={{fontSize:10,color:C.inkSoft,lineHeight:1.45,marginBottom:10}}>{r.sub}</div>
+                          <div style={{height:3,background:C.borderSm,borderRadius:99,overflow:"hidden",marginBottom:5}}>
+                            <div style={{height:"100%",width:`${pctR}%`,background:isSelected?C.red:sc>0?l.c:C.borderSm,borderRadius:99}}/>
+                          </div>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                            <span style={{fontSize:9.5,color:C.inkSoft}}>{qa}/{qtot} · {pctR}%</span>
+                            {sc>0
+                              ? <span style={{fontSize:10,fontWeight:700,color:l.c,background:l.bg,border:`1px solid ${l.border}`,padding:"1px 6px",borderRadius:4}}>{sc.toFixed(1)} {l.label}</span>
+                              : <span style={{fontSize:10,color:C.inkSoft}}>Sin respuestas</span>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div style={{display:"flex",justifyContent:"center",gap:10,paddingBottom:4}}>
                 <button onClick={()=>setTab("detail")} style={{padding:"11px 30px",background:C.red,color:"white",border:"none",borderRadius:7,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:FF,letterSpacing:"0.02em"}}>
                   Comenzar Diagnóstico →
