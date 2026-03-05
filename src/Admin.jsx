@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 // ── Mismos tokens que DVB ─────────────────────────────────────────────────────
 const C = {
@@ -95,7 +97,58 @@ export default function Admin() {
     <span style={{marginLeft:3, fontSize:10}}>{sortDir==="asc"?"▲":"▼"}</span>
   );
 
-  const avg = rows.length ? rows.reduce((s,r)=>s+r.score,0)/rows.length : 0;
+  const exportLog = () => {
+    const wb = XLSX.utils.book_new();
+
+    // ── Hoja 1: Resumen por sesión ─────────────────────────────────────────
+    const resumen = rows.map(s => ({
+      "ID / Nombre":        s.id,
+      "Creado":             new Date(s.created_at).toLocaleString("es-CO"),
+      "Última actividad":   new Date(s.updated_at).toLocaleString("es-CO"),
+      "Progreso (%)":       s.pct,
+      "Score global":       s.score > 0 ? +s.score.toFixed(2) : "",
+      "Nivel":              s.score > 0 ? C.L[Math.max(0,Math.min(4,Math.round(s.score)-1))].label : "Sin datos",
+      ...Object.fromEntries(CRITERIOS.map(c => {
+        const cs = RUBROS.map(r => wavg(c.subs, s.data?.[r.key])).filter(v=>v>0);
+        const avg = cs.length ? cs.reduce((a,b)=>a+b)/cs.length : "";
+        return [`Criterio ${c.num} - ${c.label}`, avg ? +avg.toFixed(2) : ""];
+      })),
+      ...Object.fromEntries(RUBROS.map(r => {
+        const cs = CRITERIOS.map(c => wavg(c.subs, s.data?.[r.key])).filter(v=>v>0);
+        const avg = cs.length ? cs.reduce((a,b)=>a+b)/cs.length : "";
+        return [`Paquete - ${r.label}`, avg ? +avg.toFixed(2) : ""];
+      })),
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumen), "Resumen");
+
+    // ── Hoja 2: Respuestas detalladas por sesión ───────────────────────────
+    const detalle = [];
+    rows.forEach(s => {
+      RUBROS.forEach(r => {
+        CRITERIOS.forEach(c => {
+          c.subs.forEach(sq => {
+            detalle.push({
+              "ID / Nombre": s.id,
+              "Última actividad": new Date(s.updated_at).toLocaleString("es-CO"),
+              "Paquete": r.label,
+              "Criterio": `${c.num} - ${c.label}`,
+              "Pregunta ID": sq.id,
+              "Respuesta (1-5)": s.data?.[r.key]?.[sq.id] || "",
+            });
+          });
+        });
+      });
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalle), "Detalle respuestas");
+
+    // ── Exportar ───────────────────────────────────────────────────────────
+    const buf = XLSX.write(wb, { bookType:"xlsx", type:"array" });
+    saveAs(
+      new Blob([buf], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),
+      `DVB_Admin_Log_${new Date().toISOString().slice(0,10)}.xlsx`
+    );
+  };
+  const avg       = rows.length ? rows.reduce((s,r)=>s+r.score,0)/rows.length : 0;
   const completed = rows.filter(r=>r.pct===100).length;
 
   if (loading) return (
@@ -121,13 +174,22 @@ export default function Admin() {
           <div style={{width:1, height:14, background:C.borderSm}}/>
           <span style={{fontSize:11, color:C.inkSoft}}>Panel de Administración</span>
         </div>
-        <a href="/" style={{
+        <div style={{display:"flex", gap:10, alignItems:"center"}}>
+          <button onClick={exportLog} style={{
+            padding:"5px 14px", borderRadius:7, border:"none",
+            background:C.red, color:"white", fontSize:11, fontWeight:700,
+            cursor:"pointer", fontFamily:FF,
+          }}>
+            ⬇ Descargar log Excel
+          </button>
+          <a href="/" style={{
           padding:"5px 14px", borderRadius:7, border:`1px solid ${C.border}`,
           background:C.white, color:C.inkMid, fontSize:11, fontWeight:600,
           textDecoration:"none", cursor:"pointer",
         }}>
           ← Volver a la app
         </a>
+        </div>
       </header>
 
       <div style={{padding:"28px 32px", maxWidth:1100, margin:"0 auto"}}>
