@@ -302,12 +302,20 @@ const genId = () => crypto.randomUUID
     });
 
 export default function DVB() {
+  // ── URL params ─────────────────────────────────────────────────────────────
+  const urlParams  = new URLSearchParams(window.location.search);
+  const rubrosParam = urlParams.get("rubros");
+  const ALLOWED_RUBROS = rubrosParam
+    ? RUBROS.filter(r => rubrosParam.split(",").map(s=>s.trim()).includes(r.key))
+    : RUBROS;
+  const ACTIVE_RUBROS = ALLOWED_RUBROS.length > 0 ? ALLOWED_RUBROS : RUBROS;
+
   const [ans,        setAns]        = useState(emptyAns);
   const [drivers,    setDrivers]    = useState(() => { // texto abierto por paquete
     const o = {}; RUBROS.forEach(r => { o[r.key] = ""; }); return o;
   });
   const setDriver = (rk, v) => setDrivers(p => ({...p, [rk]: v}));
-  const [rubro,      setRubro]      = useState(RUBROS[0].key);
+  const [rubro,      setRubro]      = useState(ACTIVE_RUBROS[0].key);
   const [tab,        setTab]        = useState("intro");
   const [exp,        setExp]        = useState(CRITERIOS[0].key);
   const [mounted,    setMounted]    = useState(false);
@@ -323,7 +331,7 @@ export default function DVB() {
   const [viewers,    setViewers]    = useState(1);
   const [bFilter,    setBFilter]    = useState("all"); // filtro tab brechas // contador de presencia
   const [rFilter,    setRFilter]    = useState("all"); // filtro tab resumen
-  const [introRubro, setIntroRubro] = useState("red_movil"); // paquete seleccionado en intro
+  const [introRubro, setIntroRubro] = useState(ACTIVE_RUBROS[0]?.key ?? "red_movil"); // paquete seleccionado en intro
   const [instrOpen,  setInstrOpen]  = useState(false); // instrucciones desplegables
   const saveTimer    = useRef(null);
   const channelRef   = useRef(null);
@@ -412,13 +420,13 @@ export default function DVB() {
   const set  = (rk,sid,v) => setAns(p => ({...p, [rk]: {...p[rk], [sid]:v}}));
   const cs   = (rk,ck)   => wavg(CRITERIOS.find(c=>c.key===ck).subs, ans[rk]);
   const rs   = (rk)      => { const vs=CRITERIOS.map(c=>cs(rk,c.key)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; };
-  const cg   = (ck)      => { const vs=RUBROS.map(r=>cs(r.key,ck)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; };
-  const gs   = useMemo(()=>{ const vs=RUBROS.map(r=>rs(r.key)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; }, [ans]);
+  const cg   = (ck)      => { const vs=ACTIVE_RUBROS.map(r=>cs(r.key,ck)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; };
+  const gs   = useMemo(()=>{ const vs=ACTIVE_RUBROS.map(r=>rs(r.key)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; }, [ans]);
 
-  const totA = RUBROS.reduce((s,r)=>s+CRITERIOS.reduce((s2,c)=>s2+c.subs.filter(sq=>ans[r.key][sq.id]>0).length,0),0);
-  const totQ = RUBROS.length * CRITERIOS.reduce((s,c)=>s+c.subs.length, 0);
+  const totA = ACTIVE_RUBROS.reduce((s,r)=>s+CRITERIOS.reduce((s2,c)=>s2+c.subs.filter(sq=>ans[r.key][sq.id]>0).length,0),0);
+  const totQ = ACTIVE_RUBROS.length * CRITERIOS.reduce((s,c)=>s+c.subs.length, 0);
   const pct  = Math.round((totA/totQ)*100);
-  const ar   = RUBROS.find(r=>r.key===rubro);
+  const ar   = ACTIVE_RUBROS.find(r=>r.key===rubro) || ACTIVE_RUBROS[0];
   const arSc = rs(rubro);
   const rSc  = useMemo(()=>{ const o={}; CRITERIOS.forEach(c=>{o[c.key]=cs(rubro,c.key);}); return o; }, [ans,rubro]);
 
@@ -520,7 +528,7 @@ export default function DVB() {
   const exportExcel = () => {
 
     const rows = [];
-    RUBROS.forEach(r => {
+    ACTIVE_RUBROS.forEach(r => {
       CRITERIOS.forEach(c => {
         c.subs.forEach(sq => {
           rows.push({
@@ -550,7 +558,7 @@ const resetAll = () => {
   if (!ok) return;
   try { localStorage.removeItem(STORAGE_KEY); } catch {}
   const o = emptyAns();
-  const d = {}; RUBROS.forEach(r => { d[r.key] = ""; });
+  const d = {}; ACTIVE_RUBROS.forEach(r => { d[r.key] = ""; });
   setAns(o);
   setDrivers(d);
   if (assessId) saveAssessment(assessId, { ans: o, drivers: d }).catch(()=>{});
@@ -622,7 +630,7 @@ const resetAll = () => {
         {tab==="detail" && (
           <nav style={{flex:1, padding:"6px 10px", overflowY:"auto"}}>
             <div style={{fontSize:9, fontWeight:700, color:C.inkFaint, textTransform:"uppercase", letterSpacing:"0.14em", padding:"0 4px", marginBottom:5}}>Paquete CAPEX</div>
-            {RUBROS.map(r => {
+            {ACTIVE_RUBROS.map(r => {
               const sc=rs(r.key), isA=r.key===rubro;
               const qa=CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[r.key][sq.id]>0).length,0);
               return (
@@ -700,7 +708,7 @@ const resetAll = () => {
                 border:"none",outline:"none",fontSize:12,fontWeight:700,
                 color:C.redH,background:"transparent",cursor:"pointer",fontFamily:FF,paddingRight:4,
               }}>
-                {RUBROS.map(r=><option key={r.key} value={r.key}>{r.icon} {r.label}</option>)}
+                {ACTIVE_RUBROS.map(r=><option key={r.key} value={r.key}>{r.icon} {r.label}</option>)}
               </select>
             </div>
 
@@ -782,6 +790,25 @@ const resetAll = () => {
           {tab==="intro" && (
             <div style={{maxWidth:900}}>
 
+              {/* ── Banner paquetes restringidos ── */}
+              {rubrosParam && ACTIVE_RUBROS.length < RUBROS.length && (
+                <div style={{
+                  background:"#FEF3C7", border:"1.5px solid #F59E0B",
+                  borderRadius:10, padding:"10px 16px", marginBottom:16,
+                  display:"flex", alignItems:"center", gap:10,
+                }}>
+                  <span style={{fontSize:16}}>🔒</span>
+                  <div>
+                    <span style={{fontSize:12, fontWeight:700, color:"#92400E"}}>
+                      Este link está habilitado solo para {ACTIVE_RUBROS.length} paquete{ACTIVE_RUBROS.length!==1?"s":""}:
+                    </span>
+                    <span style={{fontSize:12, color:"#78350F", marginLeft:6}}>
+                      {ACTIVE_RUBROS.map(r=>`${r.icon} ${r.label}`).join(" · ")}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* ── Hero ── */}
               <div style={{
                 borderRadius:12, overflow:"hidden", marginBottom:20,
@@ -799,7 +826,7 @@ const resetAll = () => {
                   <div style={{width:24,height:2,background:C.gold,borderRadius:99,marginBottom:14}}/>
                   <p style={{fontSize:11,color:"rgba(255,255,255,0.5)",margin:0,lineHeight:1.6}}>8 Paquetes · 6 Criterios<br/>5 Niveles · 48 Preguntas</p>
                   <div style={{marginTop:"auto",paddingTop:20,display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-                    {RUBROS.map(r=>(
+                    {ACTIVE_RUBROS.map(r=>(
                       <div key={r.key} onClick={()=>{setRubro(r.key);setTab("detail");contentRef.current?.scrollTo({top:0,behavior:"smooth"});}} style={{background:"rgba(0,0,0,0.18)",borderRadius:5,padding:"5px 7px",fontSize:9.5,fontWeight:600,color:"rgba(255,255,255,0.8)",cursor:"pointer",border:"1px solid rgba(255,255,255,0.1)",textAlign:"center"}}>
                         {r.icon} {r.label}
                       </div>
@@ -999,7 +1026,7 @@ const resetAll = () => {
                     <span style={{fontSize:11,color:C.inkSoft,fontStyle:"italic",marginLeft:4}}>Selecciona el paquete a diagnosticar</span>
                   </div>
                   {(() => {
-                    const r = RUBROS.find(r=>r.key===introRubro);
+                    const r = ACTIVE_RUBROS.find(r=>r.key===introRubro);
                     return (
                       <button onClick={()=>{setRubro(introRubro);setTab("detail");contentRef.current?.scrollTo({top:0,behavior:"smooth"});}} style={{
                         padding:"8px 20px",borderRadius:8,border:"none",
@@ -1012,7 +1039,7 @@ const resetAll = () => {
                   })()}
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
-                  {RUBROS.map(r => {
+                  {ACTIVE_RUBROS.map(r => {
                     const sc=rs(r.key);
                     const qa=CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[r.key][sq.id]>0).length,0);
                     const qtot=CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
@@ -1276,7 +1303,7 @@ const resetAll = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {RUBROS.map((r,i) => {
+                    {ACTIVE_RUBROS.map((r,i) => {
                       const sc=rs(r.key);
                       return (
                         <tr key={r.key} style={{background:i%2===0?C.white:C.bgStripe}}>
@@ -1329,7 +1356,7 @@ const resetAll = () => {
           {/* ══════════════════════════ RESUMEN ══ */}
           {tab==="resumen" && (() => {
             // Scores filtrados por paquete o globales
-            const rubroFilt = rFilter === "all" ? null : RUBROS.find(r=>r.key===rFilter);
+            const rubroFilt = rFilter === "all" ? null : ACTIVE_RUBROS.find(r=>r.key===rFilter);
             const csFilt  = (c) => rFilter==="all" ? cg(c) : cs(rFilter, c);
             const gsFilt  = rFilter==="all" ? gs : rs(rFilter);
             const totAFilt = rFilter==="all" ? totA : CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[rFilter]?.[sq.id]>0).length,0);
@@ -1354,7 +1381,7 @@ const resetAll = () => {
                     background:rFilter==="all"?C.redLight:C.white,
                     color:rFilter==="all"?C.redH:C.inkMid,
                   }}>🏢 General</button>
-                  {RUBROS.map(r=>(
+                  {ACTIVE_RUBROS.map(r=>(
                     <button key={r.key} onClick={()=>setRFilter(r.key)} style={{
                       padding:"5px 12px",borderRadius:7,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:FF,
                       border:`1.5px solid ${rFilter===r.key?C.red:C.border}`,
@@ -1421,7 +1448,7 @@ const resetAll = () => {
                     <h3 style={{fontSize:14,fontWeight:700,margin:0}}>Score por Paquete</h3>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
-                    {RUBROS.map(r=>{
+                    {ACTIVE_RUBROS.map(r=>{
                       const sc=rs(r.key),l=sc>0?lv(Math.round(sc)):null;
                       return(
                         <div key={r.key} onClick={()=>setRFilter(r.key)} style={{padding:"12px 14px",borderRadius:9,cursor:"pointer",background:sc>0?l.bg:C.bgStripe,border:`1px solid ${sc>0?l.border:C.borderSm}`,transition:"all .15s",position:"relative",overflow:"hidden"}}>
@@ -1488,7 +1515,7 @@ const resetAll = () => {
           {/* ══════════════════════════ BRECHAS & ROADMAP ══ */}
           {tab==="brechas" && (() => {
             const brechas = [];
-            RUBROS.forEach(r => {
+            ACTIVE_RUBROS.forEach(r => {
               CRITERIOS.forEach(c => {
                 c.subs.forEach(sq => {
                   const v = ans[r.key]?.[sq.id] || 0;
@@ -1519,7 +1546,7 @@ const resetAll = () => {
                   <div>
                     <h2 style={{fontSize:18, fontWeight:800, margin:"0 0 4px", letterSpacing:"-0.02em"}}>Brechas & Roadmap</h2>
                     <p style={{fontSize:12, color:C.inkMid, margin:0}}>
-                      {bFilter==="all" ? `General · ${brechas.length} respuestas` : `${RUBROS.find(r=>r.key===bFilter)?.label} · ${brechasFilt.length} respuestas`}
+                      {bFilter==="all" ? `General · ${brechas.length} respuestas` : `${ACTIVE_RUBROS.find(r=>r.key===bFilter)?.label} · ${brechasFilt.length} respuestas`}
                       {" · "}Top 10 brechas ordenadas por gap al nivel óptimo (5)
                     </p>
                   </div>
@@ -1533,7 +1560,7 @@ const resetAll = () => {
                     }}>
                       🏢 General (Claro)
                     </button>
-                    {RUBROS.map(r => (
+                    {ACTIVE_RUBROS.map(r => (
                       <button key={r.key} onClick={()=>setBFilter(r.key)} style={{
                         padding:"5px 12px", borderRadius:7, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:FF,
                         border:`1.5px solid ${bFilter===r.key ? C.red : C.border}`,

@@ -41,22 +41,17 @@ const wavg = (subs, ans) => {
   subs.forEach(s => { const v=ans?.[s.id]; if(v>0){t+=v*s.p; w+=s.p;} });
   return w ? t/w : 0;
 };
-// DVB guarda como { ans: {...}, drivers: {...} } — extraemos ans
-const getAns = (data) => data?.ans ?? data ?? {};
-
 const globalScore = (data) => {
-  const ans = getAns(data);
-  if (!ans) return 0;
+  if (!data) return 0;
   const vs = RUBROS.map(r => {
-    const cs = CRITERIOS.map(c => wavg(c.subs, ans[r.key])).filter(v=>v>0);
+    const cs = CRITERIOS.map(c => wavg(c.subs, data[r.key])).filter(v=>v>0);
     return cs.length ? cs.reduce((a,b)=>a+b)/cs.length : 0;
   }).filter(v=>v>0);
   return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0;
 };
 const answered = (data) => {
-  const ans = getAns(data);
-  if (!ans) return 0;
-  return RUBROS.reduce((s,r) => s + CRITERIOS.reduce((s2,c) => s2 + c.subs.filter(sq => ans[r.key]?.[sq.id] > 0).length, 0), 0);
+  if (!data) return 0;
+  return RUBROS.reduce((s,r) => s + CRITERIOS.reduce((s2,c) => s2 + c.subs.filter(sq => data[r.key]?.[sq.id] > 0).length, 0), 0);
 };
 const totalQ = RUBROS.length * CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
 const lv = v => C.L[Math.max(0,Math.min(4,Math.round(v)-1))];
@@ -117,9 +112,18 @@ export default function Admin() {
   const [showGen,  setShowGen]  = useState(false);
   const [genInput, setGenInput] = useState("");
   const [genCopied,setGenCopied]= useState(false);
+  const ALL_RUBROS = ["red_movil","red_fija","transmision","nube_publica","nube_telco","it","umm","umc"];
+  const RUBRO_LABELS = {red_movil:"📡 Red Móvil",red_fija:"🔌 Red Fija",transmision:"🔗 Transmisión",nube_publica:"☁️ Nube Pública",nube_telco:"🖥️ Nube Telco",it:"💻 IT",umm:"📦 UMM",umc:"🏗️ UMC"};
+  const [genRubros, setGenRubros] = useState([...ALL_RUBROS]);
+
+  const toggleGenRubro = (key) => setGenRubros(prev =>
+    prev.includes(key) ? prev.filter(k=>k!==key) : [...prev, key]
+  );
 
   const genClean = genInput.trim().toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9\-_]/g,"");
-  const genUrl   = genClean ? `${window.location.origin}/?id=${genClean}` : "";
+  const genRubrosParam = genRubros.length > 0 && genRubros.length < ALL_RUBROS.length
+    ? `&rubros=${genRubros.join(",")}` : "";
+  const genUrl   = genClean ? `${window.location.origin}/?id=${genClean}${genRubrosParam}` : "";
 
   const exportLog = () => {
     const wb = XLSX.utils.book_new();
@@ -133,12 +137,12 @@ export default function Admin() {
       "Score global":       s.score > 0 ? +s.score.toFixed(2) : "",
       "Nivel":              s.score > 0 ? C.L[Math.max(0,Math.min(4,Math.round(s.score)-1))].label : "Sin datos",
       ...Object.fromEntries(CRITERIOS.map(c => {
-        const cs = RUBROS.map(r => wavg(c.subs, getAns(s.data)?.[r.key])).filter(v=>v>0);
+        const cs = RUBROS.map(r => wavg(c.subs, s.data?.[r.key])).filter(v=>v>0);
         const avg = cs.length ? cs.reduce((a,b)=>a+b)/cs.length : "";
         return [`Criterio ${c.num} - ${c.label}`, avg ? +avg.toFixed(2) : ""];
       })),
       ...Object.fromEntries(RUBROS.map(r => {
-        const cs = CRITERIOS.map(c => wavg(c.subs, getAns(s.data)?.[r.key])).filter(v=>v>0);
+        const cs = CRITERIOS.map(c => wavg(c.subs, s.data?.[r.key])).filter(v=>v>0);
         const avg = cs.length ? cs.reduce((a,b)=>a+b)/cs.length : "";
         return [`Paquete - ${r.label}`, avg ? +avg.toFixed(2) : ""];
       })),
@@ -157,7 +161,7 @@ export default function Admin() {
               "Paquete": r.label,
               "Criterio": `${c.num} - ${c.label}`,
               "Pregunta ID": sq.id,
-              "Respuesta (1-5)": getAns(s.data)?.[r.key]?.[sq.id] || "",
+              "Respuesta (1-5)": s.data?.[r.key]?.[sq.id] || "",
             });
           });
         });
@@ -225,6 +229,56 @@ export default function Admin() {
               />
             </div>
 
+            {/* Checklist de paquetes */}
+            <div style={{marginBottom:16}}>
+              <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8}}>
+                <span style={{fontSize:12, fontWeight:700, color:C.ink}}>Paquetes habilitados en el link</span>
+                <div style={{display:"flex", gap:6}}>
+                  <button onClick={()=>setGenRubros([...ALL_RUBROS])} style={{
+                    fontSize:10, padding:"2px 8px", borderRadius:4, cursor:"pointer",
+                    border:`1px solid ${C.border}`, background:"white", color:C.inkMid, fontFamily:FF,
+                  }}>Todos</button>
+                  <button onClick={()=>setGenRubros([])} style={{
+                    fontSize:10, padding:"2px 8px", borderRadius:4, cursor:"pointer",
+                    border:`1px solid ${C.border}`, background:"white", color:C.inkMid, fontFamily:FF,
+                  }}>Ninguno</button>
+                </div>
+              </div>
+              <div style={{
+                display:"grid", gridTemplateColumns:"1fr 1fr",
+                gap:6, padding:"10px 12px",
+                background:C.bg, borderRadius:8, border:`1px solid ${C.border}`,
+              }}>
+                {ALL_RUBROS.map(key => {
+                  const checked = genRubros.includes(key);
+                  return (
+                    <label key={key} style={{
+                      display:"flex", alignItems:"center", gap:7, cursor:"pointer",
+                      padding:"5px 7px", borderRadius:6,
+                      background: checked ? `${C.red}12` : "transparent",
+                      border: `1px solid ${checked ? C.red+"44" : "transparent"}`,
+                      transition:"all .15s",
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={()=>{ toggleGenRubro(key); setGenCopied(false); }}
+                        style={{accentColor:C.red, width:14, height:14, cursor:"pointer", flexShrink:0}}
+                      />
+                      <span style={{fontSize:11, fontWeight: checked ? 600 : 400, color: checked ? C.inkH : C.inkMid}}>
+                        {RUBRO_LABELS[key]}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+              {genRubros.length === 0 && (
+                <p style={{fontSize:11, color:"#DC2626", margin:"6px 0 0", fontWeight:600}}>
+                  ⚠️ Selecciona al menos un paquete
+                </p>
+              )}
+            </div>
+
             {/* Preview URL */}
             {genUrl && (
               <div style={{
@@ -240,16 +294,16 @@ export default function Admin() {
             {/* Buttons */}
             <div style={{display:"flex", gap:8}}>
               <button
-                disabled={!genUrl}
+                disabled={!genUrl || genRubros.length === 0}
                 onClick={()=>{
                   navigator.clipboard.writeText(genUrl).catch(()=>{});
                   setGenCopied(true);
                 }}
                 style={{
                   flex:1, padding:"10px", borderRadius:8, border:"none",
-                  background: genCopied ? "#16A34A" : genUrl ? C.red : C.borderSm,
+                  background: genCopied ? "#16A34A" : (genUrl && genRubros.length > 0) ? C.red : C.borderSm,
                   color:"white", fontSize:13, fontWeight:700,
-                  cursor: genUrl ? "pointer" : "default", fontFamily:FF,
+                  cursor: (genUrl && genRubros.length > 0) ? "pointer" : "default", fontFamily:FF,
                   transition:"background .2s",
                 }}
               >
@@ -265,7 +319,7 @@ export default function Admin() {
                   Abrir →
                 </a>
               )}
-              <button onClick={()=>{ setShowGen(false); setGenInput(""); setGenCopied(false); }} style={{
+              <button onClick={()=>{ setShowGen(false); setGenInput(""); setGenCopied(false); setGenRubros([...ALL_RUBROS]); }} style={{
                 padding:"10px 14px", borderRadius:8, fontFamily:FF,
                 border:`1px solid ${C.border}`, background:"white",
                 color:C.inkMid, fontSize:12, cursor:"pointer",
