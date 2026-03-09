@@ -668,12 +668,12 @@ export default function Admin() {
           </div>
         </div>
 
-        <style>{`
+        <style dangerouslySetInnerHTML={{__html:`
           @keyframes pulse {
             0%,100% { box-shadow: 0 0 0 3px #bbf7d088; }
             50%      { box-shadow: 0 0 0 6px #86efac33; }
           }
-        `}</style>
+        `}} />
       </div>
     </div>
   );
