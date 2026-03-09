@@ -542,7 +542,7 @@ export default function Admin() {
                         {s.isActive && (
                           <span style={{
                             width:8, height:8, borderRadius:"50%", flexShrink:0,
-                            background:"#22C55E", boxShadow:"0 0 0 3px #bbf7d088",
+                            background:"#22C55E", boxShadow:"0 0 0 3px rgba(187,247,208,0.53)",
                             display:"inline-block", animation:"pulse 1.5s infinite",
                           }}/>
                         )}
@@ -630,7 +630,7 @@ export default function Admin() {
           }}>
             <span style={{
               width:8, height:8, borderRadius:"50%", background:"#22C55E",
-              boxShadow:"0 0 0 3px #bbf7d088", display:"inline-block",
+              boxShadow:"0 0 0 3px rgba(187,247,208,0.53)", display:"inline-block",
               animation:"pulse 1.5s infinite",
             }}/>
             <span style={{fontSize:13, fontWeight:700, color:C.ink}}>Log en vivo</span>
@@ -653,11 +653,11 @@ export default function Admin() {
                   display:"flex", alignItems:"center", gap:12,
                   padding:"8px 20px",
                   borderBottom: i < liveEvents.length-1 ? `1px solid ${C.borderSm}` : "none",
-                  background: i===0 ? `${typeColor}08` : "transparent",
+                  background: i===0 ? "rgba(0,0,0,0.03)" : "transparent",
                 }}>
                   <span style={{
                     fontSize:9.5, fontWeight:800, letterSpacing:"0.06em",
-                    color:typeColor, background:`${typeColor}15`,
+                    color:typeColor, background:"rgba(0,0,0,0.06)",
                     padding:"2px 7px", borderRadius:4, flexShrink:0,
                   }}>{typeLabel}</span>
                   <span style={{flex:1, color:C.ink, fontWeight: i===0 ? 700 : 400}}>{ev.id}</span>
@@ -668,12 +668,12 @@ export default function Admin() {
           </div>
         </div>
 
-        <style dangerouslySetInnerHTML={{__html:`
-          @keyframes pulse {
-            0%,100% { box-shadow: 0 0 0 3px #bbf7d088; }
-            50%      { box-shadow: 0 0 0 6px #86efac33; }
-          }
-        `}} />
+        <style dangerouslySetInnerHTML={{__html:[
+          "@keyframes pulse {",
+          "0%,100% { box-shadow: 0 0 0 3px rgba(187,247,208,0.53); }",
+          "50% { box-shadow: 0 0 0 6px rgba(134,239,172,0.2); }",
+          "}"
+        ].join(" ")}} />
       </div>
     </div>
   );
