@@ -56,14 +56,33 @@ const answered = (data) => {
 const totalQ = RUBROS.length * CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
 const lv = v => C.L[Math.max(0,Math.min(4,Math.round(v)-1))];
 
+const ACTIVE_MS = 2 * 60 * 1000;
+
 export default function Admin() {
-  const [sessions, setSessions] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [search,   setSearch]   = useState("");
-  const [sortBy,   setSortBy]   = useState("updated_at"); // updated_at | score | pct
-  const [sortDir,  setSortDir]  = useState("desc");
+  const [sessions,   setSessions]   = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [search,     setSearch]     = useState("");
+  const [sortBy,     setSortBy]     = useState("updated_at");
+  const [sortDir,    setSortDir]    = useState("desc");
+  const [now,        setNow]        = useState(Date.now());
+  const [deleting,   setDeleting]   = useState(null);
+  const [exporting,  setExporting]  = useState(false);
+  const [toast,      setToast]      = useState(null);
+  const [liveEvents, setLiveEvents] = useState([]);
+
+  const showToast = (msg, ok=true) => {
+    setToast({msg, ok});
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  // Reloj cada 10s para recalcular "activo"
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 10_000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
+    // Carga inicial
     supabase
       .from("dvb_assessments")
       .select("id, data, created_at, updated_at")
@@ -72,13 +91,36 @@ export default function Admin() {
         if (!error && data) setSessions(data);
         setLoading(false);
       });
+
+    // Suscripción Realtime
+    const channel = supabase
+      .channel("dvb_live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "dvb_assessments" }, (payload) => {
+        const { eventType, new: newRow, old: oldRow } = payload;
+        if (eventType === "INSERT") {
+          setSessions(prev => [newRow, ...prev]);
+          setLiveEvents(prev => [{ id: newRow.id, type: "INSERT", ts: Date.now() }, ...prev.slice(0, 49)]);
+        }
+        if (eventType === "UPDATE") {
+          setSessions(prev => prev.map(s => s.id === newRow.id ? newRow : s));
+          setLiveEvents(prev => [{ id: newRow.id, type: "UPDATE", ts: Date.now() }, ...prev.slice(0, 49)]);
+        }
+        if (eventType === "DELETE") {
+          setSessions(prev => prev.filter(s => s.id !== oldRow.id));
+          setLiveEvents(prev => [{ id: oldRow.id, type: "DELETE", ts: Date.now() }, ...prev.slice(0, 49)]);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const rows = sessions
     .map(s => ({
       ...s,
-      score: globalScore(s.data),
-      pct:   Math.round((answered(s.data) / totalQ) * 100),
+      score:    globalScore(s.data),
+      pct:      Math.round((answered(s.data) / totalQ) * 100),
+      isActive: (now - new Date(s.updated_at).getTime()) < ACTIVE_MS,
     }))
     .filter(s => s.id.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
@@ -99,14 +141,29 @@ export default function Admin() {
 
   const deleteOne = async (id) => {
     if (!window.confirm(`¿Eliminar el registro "${id}"? Esta acción no se puede deshacer.`)) return;
-    await supabase.from("dvb_assessments").delete().eq("id", id);
-    setSessions(prev => prev.filter(s => s.id !== id));
+    setDeleting(id);
+    const { error } = await supabase.from("dvb_assessments").delete().eq("id", id);
+    setDeleting(null);
+    if (error) {
+      showToast(`❌ Error al eliminar "${id}": ${error.message}`, false);
+    } else {
+      setSessions(prev => prev.filter(s => s.id !== id));
+      showToast(`✓ Registro "${id}" eliminado.`);
+    }
   };
 
   const deleteAll = async () => {
     if (!window.confirm(`¿Eliminar TODOS los ${rows.length} registros? Esta acción no se puede deshacer.`)) return;
-    await supabase.from("dvb_assessments").delete().neq("id", "");
-    setSessions([]);
+    setDeleting("all");
+    const ids = sessions.map(s => s.id);
+    const { error } = await supabase.from("dvb_assessments").delete().in("id", ids);
+    setDeleting(null);
+    if (error) {
+      showToast(`❌ Error al eliminar: ${error.message}`, false);
+    } else {
+      setSessions([]);
+      showToast("✓ Todos los registros eliminados.");
+    }
   };
 
   const [showGen,  setShowGen]  = useState(false);
@@ -126,6 +183,8 @@ export default function Admin() {
   const genUrl   = genClean ? `${window.location.origin}/?id=${genClean}${genRubrosParam}` : "";
 
   const exportLog = () => {
+    setExporting(true);
+    try {
     const wb = XLSX.utils.book_new();
 
     // ── Hoja 1: Resumen por sesión ─────────────────────────────────────────
@@ -175,6 +234,12 @@ export default function Admin() {
       new Blob([buf], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),
       `DVB_Admin_Log_${new Date().toISOString().slice(0,10)}.xlsx`
     );
+    showToast("✓ Excel exportado correctamente.");
+    } catch(e) {
+      showToast(`❌ Error al exportar: ${e.message}`, false);
+    } finally {
+      setExporting(false);
+    }
   };
   const avg       = rows.length ? rows.reduce((s,r)=>s+r.score,0)/rows.length : 0;
   const completed = rows.filter(r=>r.pct===100).length;
@@ -187,6 +252,19 @@ export default function Admin() {
 
   return (
     <div style={{minHeight:"100vh", background:C.bg, fontFamily:FF}}>
+
+      {/* ── Toast ── */}
+      {toast && (
+        <div style={{
+          position:"fixed", bottom:28, left:"50%", transform:"translateX(-50%)",
+          background: toast.ok ? "#18181B" : "#991B1B",
+          color:"white", padding:"11px 22px", borderRadius:10,
+          fontSize:13, fontWeight:600, zIndex:2000,
+          boxShadow:"0 4px 24px rgba(0,0,0,0.22)", whiteSpace:"nowrap",
+        }}>
+          {toast.msg}
+        </div>
+      )}
 
       {/* ── Modal generador de links ── */}
       {showGen && (
@@ -353,19 +431,20 @@ export default function Admin() {
           }}>
             🔗 Generar link
           </button>
-          <button onClick={exportLog} style={{
+          <button onClick={exportLog} disabled={exporting} style={{
             padding:"5px 14px", borderRadius:7, border:"none",
-            background:C.red, color:"white", fontSize:11, fontWeight:700,
-            cursor:"pointer", fontFamily:FF,
+            background: exporting ? "#A1A1AA" : C.red, color:"white", fontSize:11, fontWeight:700,
+            cursor: exporting ? "default" : "pointer", fontFamily:FF,
           }}>
-            ⬇ Descargar log Excel
+            {exporting ? "Exportando…" : "⬇ Descargar log Excel"}
           </button>
-          <button onClick={deleteAll} style={{
+          <button onClick={deleteAll} disabled={deleting==="all"} style={{
             padding:"5px 14px", borderRadius:7, fontSize:11, fontWeight:700,
-            cursor:"pointer", fontFamily:FF,
+            cursor: deleting==="all" ? "default" : "pointer", fontFamily:FF,
             border:"1px solid #FECACA", background:"#FEF2F2", color:"#991B1B",
+            opacity: deleting==="all" ? 0.6 : 1,
           }}>
-            🗑 Eliminar todo
+            {deleting==="all" ? "Eliminando…" : "🗑 Eliminar todo"}
           </button>
           <a href="/" style={{
           padding:"5px 14px", borderRadius:7, border:`1px solid ${C.border}`,
@@ -385,7 +464,7 @@ export default function Admin() {
             {label:"Sesiones totales", value:rows.length, color:C.red},
             {label:"Score promedio",   value:avg>0?avg.toFixed(1):"—", color:"#3B82F6"},
             {label:"Completadas 100%", value:completed, color:"#22C55E"},
-            {label:"Preguntas totales",value:totalQ, color:"#EAB308"},
+            {label:"Activas ahora",    value:rows.filter(r=>r.isActive).length, color:"#F97316"},
           ].map((s,i) => (
             <div key={i} style={{
               flex:1, background:C.white, borderRadius:10, padding:"16px 20px",
@@ -459,9 +538,20 @@ export default function Admin() {
                   }}>
                     {/* ID */}
                     <td style={{padding:"12px 16px"}}>
-                      <div style={{fontSize:13, fontWeight:700, color:C.ink}}>{s.id}</div>
-                      <div style={{fontSize:10.5, color:C.inkSoft, marginTop:2}}>
-                        Creado {new Date(s.created_at).toLocaleDateString("es-CO",{day:"2-digit",month:"short",year:"numeric"})}
+                      <div style={{display:"flex", alignItems:"center", gap:7}}>
+                        {s.isActive && (
+                          <span style={{
+                            width:8, height:8, borderRadius:"50%", flexShrink:0,
+                            background:"#22C55E", boxShadow:"0 0 0 3px #bbf7d088",
+                            display:"inline-block", animation:"pulse 1.5s infinite",
+                          }}/>
+                        )}
+                        <div>
+                          <div style={{fontSize:13, fontWeight:700, color:C.ink}}>{s.id}</div>
+                          <div style={{fontSize:10.5, color:C.inkSoft, marginTop:2}}>
+                            Creado {new Date(s.created_at).toLocaleDateString("es-CO",{day:"2-digit",month:"short",year:"numeric"})}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     {/* Última actividad */}
@@ -509,13 +599,15 @@ export default function Admin() {
                         }}>
                           Ver →
                         </a>
-                        <button onClick={() => deleteOne(s.id)} style={{
+                        <button onClick={() => deleteOne(s.id)} disabled={!!deleting} style={{
                           fontSize:11, fontWeight:600, padding:"5px 8px",
                           border:"1px solid #FECACA", borderRadius:6,
                           background:"#FEF2F2", color:"#991B1B",
-                          cursor:"pointer", fontFamily:FF, flexShrink:0,
+                          cursor: deleting ? "default" : "pointer",
+                          fontFamily:FF, flexShrink:0,
+                          opacity: deleting===s.id ? 0.5 : 1,
                         }}>
-                          🗑
+                          {deleting===s.id ? "…" : "🗑"}
                         </button>
                       </div>
                     </td>
@@ -525,6 +617,63 @@ export default function Admin() {
             </tbody>
           </table>
         </div>
+        </div>
+
+        {/* ── Live feed ── */}
+        <div style={{
+          marginTop:24, background:C.white, borderRadius:10,
+          border:`1px solid ${C.border}`, overflow:"hidden",
+        }}>
+          <div style={{
+            padding:"12px 20px", borderBottom:`1px solid ${C.border}`,
+            display:"flex", alignItems:"center", gap:8,
+          }}>
+            <span style={{
+              width:8, height:8, borderRadius:"50%", background:"#22C55E",
+              boxShadow:"0 0 0 3px #bbf7d088", display:"inline-block",
+              animation:"pulse 1.5s infinite",
+            }}/>
+            <span style={{fontSize:13, fontWeight:700, color:C.ink}}>Log en vivo</span>
+            <span style={{fontSize:11, color:C.inkSoft, marginLeft:4}}>
+              — cambios en tiempo real vía Supabase Realtime
+            </span>
+          </div>
+          <div style={{maxHeight:220, overflowY:"auto", fontFamily:"'Courier New', monospace", fontSize:11.5}}>
+            {liveEvents.length === 0 ? (
+              <div style={{padding:"20px", color:C.inkSoft, fontSize:12}}>
+                Esperando actividad… Los cambios aparecerán aquí en tiempo real.
+              </div>
+            ) : liveEvents.map((ev, i) => {
+              const age = Math.round((Date.now() - ev.ts) / 1000);
+              const ageStr = age < 60 ? `hace ${age}s` : `hace ${Math.round(age/60)}m`;
+              const typeColor = ev.type==="INSERT" ? "#16A34A" : ev.type==="UPDATE" ? "#2563EB" : "#DC2626";
+              const typeLabel = ev.type==="INSERT" ? "NUEVA SESIÓN" : ev.type==="UPDATE" ? "ACTUALIZACIÓN" : "ELIMINADO";
+              return (
+                <div key={i} style={{
+                  display:"flex", alignItems:"center", gap:12,
+                  padding:"8px 20px",
+                  borderBottom: i < liveEvents.length-1 ? `1px solid ${C.borderSm}` : "none",
+                  background: i===0 ? `${typeColor}08` : "transparent",
+                }}>
+                  <span style={{
+                    fontSize:9.5, fontWeight:800, letterSpacing:"0.06em",
+                    color:typeColor, background:`${typeColor}15`,
+                    padding:"2px 7px", borderRadius:4, flexShrink:0,
+                  }}>{typeLabel}</span>
+                  <span style={{flex:1, color:C.ink, fontWeight: i===0 ? 700 : 400}}>{ev.id}</span>
+                  <span style={{color:C.inkSoft, fontSize:11, flexShrink:0}}>{ageStr}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <style>{`
+          @keyframes pulse {
+            0%,100% { box-shadow: 0 0 0 3px #bbf7d088; }
+            50%      { box-shadow: 0 0 0 6px #86efac33; }
+          }
+        `}</style>
       </div>
     </div>
   );
