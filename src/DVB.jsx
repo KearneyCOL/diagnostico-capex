@@ -607,7 +607,7 @@ const resetAll = () => {
             <div style={{maxWidth:900}}>
 
               {/* ── Banner paquetes restringidos ── */}
-              {rubrosParam && ACTIVE_RUBROS.length < RUBROS.length && (
+              {ACTIVE_RUBROS.length < RUBROS.length && (
                 <div style={{
                   background:"#FEF3C7", border:"1.5px solid #F59E0B",
                   borderRadius:10, padding:"10px 16px", marginBottom:16,
