@@ -182,7 +182,13 @@ export default function DVB() {
     const urlId = getIdFromUrl();
     const hydrate = (payload) => {
       if (!payload) return;
-      if (payload.ans)     setAns(payload.ans);
+      if (payload.ans) {
+        const base = emptyAns();
+        Object.entries(payload.ans).forEach(([k, v]) => {
+          if (base[k] !== undefined) base[k] = { ...base[k], ...v };
+        });
+        setAns(base);
+      }
       if (payload.drivers) setDrivers(payload.drivers);
     };
     const fromLS = () => {
@@ -241,7 +247,7 @@ export default function DVB() {
   const cg   = useCallback((ck)    => { const vs=ACTIVE_RUBROS.map(r=>cs(r.key,ck)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; }, [cs, ACTIVE_RUBROS]);
   const gs   = useMemo(()=>{ const vs=ACTIVE_RUBROS.map(r=>rs(r.key)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; }, [rs, ACTIVE_RUBROS]);
 
-  const totA = ACTIVE_RUBROS.reduce((s,r)=>s+CRITERIOS.reduce((s2,c)=>s2+c.subs.filter(sq=>ans[r.key][sq.id]>0).length,0),0);
+  const totA = ACTIVE_RUBROS.reduce((s,r)=>s+CRITERIOS.reduce((s2,c)=>s2+c.subs.filter(sq=>ans[r.key]?.[sq.id]>0).length,0),0);
   const totQ = ACTIVE_RUBROS.length * CRITERIOS.reduce((s,c)=>s+c.subs.length, 0);
   const pct  = Math.round((totA/totQ)*100);
   const ar   = ACTIVE_RUBROS.find(r=>r.key===rubro) || ACTIVE_RUBROS[0];
@@ -448,7 +454,7 @@ const resetAll = () => {
             <div style={{fontSize:9, fontWeight:700, color:C.inkFaint, textTransform:"uppercase", letterSpacing:"0.14em", padding:"0 4px", marginBottom:5}}>Paquete CAPEX</div>
             {ACTIVE_RUBROS.map(r => {
               const sc=rs(r.key), isA=r.key===rubro;
-              const qa=CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[r.key][sq.id]>0).length,0);
+              const qa=CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[r.key]?.[sq.id]>0).length,0);
               return (
                 <div key={r.key} onClick={()=>setRubro(r.key)} style={{
                   display:"flex", alignItems:"center", gap:8, padding:"7px 8px",
@@ -857,7 +863,7 @@ const resetAll = () => {
                 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
                   {ACTIVE_RUBROS.map(r => {
                     const sc=rs(r.key);
-                    const qa=CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[r.key][sq.id]>0).length,0);
+                    const qa=CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[r.key]?.[sq.id]>0).length,0);
                     const qtot=CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
                     const pctR=Math.round((qa/qtot)*100);
                     const l=sc>0?lv(Math.round(sc)):null;
@@ -952,7 +958,7 @@ const resetAll = () => {
               {CRITERIOS.map(crit => {
                 const csc = cs(rubro, crit.key);
                 const isOpen = exp === crit.key;
-                const aH = crit.subs.filter(sq=>ans[rubro][sq.id]>0).length;
+                const aH = crit.subs.filter(sq=>ans[rubro]?.[sq.id]>0).length;
                 return (
                   <div key={crit.key} style={{
                     background:C.white, borderRadius:10, marginBottom:8,
@@ -1009,7 +1015,7 @@ const resetAll = () => {
                             Preguntas de Diagnóstico
                           </div>
                           {crit.subs.map((sq,idx) => {
-                            const val=ans[rubro][sq.id], l=val>0?lv(val):null;
+                            const val=ans[rubro]?.[sq.id], l=val>0?lv(val):null;
                             return (
                               <div key={sq.id} style={{
                                 marginBottom:12, padding:"12px 14px",
