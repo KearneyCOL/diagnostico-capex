@@ -63,6 +63,14 @@ export default function Admin() {
   const [sortBy,   setSortBy]   = useState("updated_at"); // updated_at | score | pct
   const [sortDir,  setSortDir]  = useState("desc");
 
+  // ── Selección múltiple ──
+  const [selected, setSelected] = useState(new Set());
+
+  // ── Modal para crear promedio ──
+  const [showAvgModal, setShowAvgModal] = useState(false);
+  const [avgName, setAvgName] = useState("");
+  const [creatingAvg, setCreatingAvg] = useState(false);
+
   useEffect(() => {
     supabase
       .from("dvb_assessments")
@@ -97,16 +105,114 @@ export default function Admin() {
     <span style={{marginLeft:3, fontSize:10}}>{sortDir==="asc"?"▲":"▼"}</span>
   );
 
+  // ── Selección ──
+  const toggleSelect = (id) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.size === rows.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(rows.map(r => r.id)));
+    }
+  };
+
+  const clearSelection = () => setSelected(new Set());
+
+  // ── Crear promedio ──
+  const createAverage = async () => {
+    if (!avgName.trim() || selected.size < 2) return;
+    
+    setCreatingAvg(true);
+    
+    try {
+      // Obtener las sesiones seleccionadas
+      const selectedSessions = sessions.filter(s => selected.has(s.id));
+      
+      // Calcular el promedio de todas las respuestas
+      const avgData = {};
+      
+      RUBROS.forEach(rubro => {
+        avgData[rubro.key] = {};
+        
+        CRITERIOS.forEach(criterio => {
+          criterio.subs.forEach(sub => {
+            // Obtener todos los valores para esta pregunta
+            const values = selectedSessions
+              .map(s => s.data?.[rubro.key]?.[sub.id])
+              .filter(v => v && v > 0);
+            
+            // Calcular promedio si hay valores
+            if (values.length > 0) {
+              const avg = values.reduce((a, b) => a + b, 0) / values.length;
+              // Redondear al entero más cercano (1-5)
+              avgData[rubro.key][sub.id] = Math.round(avg);
+            }
+          });
+        });
+      });
+
+      // Limpiar el nombre
+      const cleanName = avgName.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-_]/g, "");
+      
+      // Guardar en Supabase
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from("dvb_assessments")
+        .upsert({
+          id: cleanName,
+          data: avgData,
+          created_at: now,
+          updated_at: now,
+        });
+
+      if (error) throw error;
+
+      // Abrir el nuevo registro
+      window.open(`/?id=${cleanName}`, "_blank");
+      
+      // Limpiar estado
+      setShowAvgModal(false);
+      setAvgName("");
+      setSelected(new Set());
+      
+      // Recargar sesiones
+      const { data: newData } = await supabase
+        .from("dvb_assessments")
+        .select("id, data, created_at, updated_at")
+        .order("updated_at", { ascending: false });
+      if (newData) setSessions(newData);
+      
+    } catch (err) {
+      console.error("Error creando promedio:", err);
+      alert("Error al crear el promedio. Por favor intenta de nuevo.");
+    } finally {
+      setCreatingAvg(false);
+    }
+  };
+
   const deleteOne = async (id) => {
     if (!window.confirm(`¿Eliminar el registro "${id}"? Esta acción no se puede deshacer.`)) return;
     await supabase.from("dvb_assessments").delete().eq("id", id);
     setSessions(prev => prev.filter(s => s.id !== id));
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
   };
 
   const deleteAll = async () => {
     if (!window.confirm(`¿Eliminar TODOS los ${rows.length} registros? Esta acción no se puede deshacer.`)) return;
     await supabase.from("dvb_assessments").delete().neq("id", "");
     setSessions([]);
+    setSelected(new Set());
   };
 
   const [showGen,  setShowGen]  = useState(false);
@@ -187,6 +293,100 @@ export default function Admin() {
 
   return (
     <div style={{minHeight:"100vh", background:C.bg, fontFamily:FF}}>
+
+      {/* ── Modal crear promedio ── */}
+      {showAvgModal && (
+        <div style={{
+          position:"fixed", inset:0, background:"rgba(0,0,0,0.5)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          zIndex:1000, fontFamily:FF,
+        }} onClick={()=>{ if(!creatingAvg) setShowAvgModal(false); }}>
+          <div style={{
+            background:"white", borderRadius:14, padding:"28px 24px", width:400,
+            boxShadow:"0 8px 48px rgba(0,0,0,0.2)", borderTop:`4px solid #3B82F6`,
+          }} onClick={e=>e.stopPropagation()}>
+            <h2 style={{fontSize:16, fontWeight:800, color:C.ink, margin:"0 0 6px"}}>
+              📊 Crear resultado promedio
+            </h2>
+            <p style={{fontSize:12, color:C.inkSoft, margin:"0 0 16px", lineHeight:1.5}}>
+              Se creará un nuevo registro con el promedio de las <strong>{selected.size} sesiones</strong> seleccionadas.
+            </p>
+
+            {/* Lista de seleccionados */}
+            <div style={{
+              background:C.bg, borderRadius:8, padding:"10px 12px",
+              marginBottom:16, maxHeight:120, overflowY:"auto",
+              border:`1px solid ${C.border}`,
+            }}>
+              <div style={{fontSize:10, color:C.inkSoft, marginBottom:6, fontWeight:600}}>
+                SESIONES A PROMEDIAR:
+              </div>
+              {[...selected].map(id => (
+                <div key={id} style={{
+                  fontSize:11, color:C.inkMid, padding:"3px 0",
+                  borderBottom:`1px solid ${C.borderSm}`,
+                }}>
+                  • {id}
+                </div>
+              ))}
+            </div>
+
+            {/* Input nombre */}
+            <div style={{marginBottom:16}}>
+              <label style={{fontSize:11, fontWeight:600, color:C.ink, display:"block", marginBottom:6}}>
+                Nombre del nuevo registro:
+              </label>
+              <input
+                autoFocus
+                value={avgName}
+                onChange={e => setAvgName(e.target.value)}
+                placeholder="ej: promedio-q1-2026, consolidado-norte..."
+                disabled={creatingAvg}
+                style={{
+                  width:"100%", padding:"10px 12px", borderRadius:8,
+                  border:`1.5px solid ${C.border}`, fontSize:13,
+                  fontFamily:FF, color:C.ink, outline:"none",
+                  background: creatingAvg ? C.bg : "white",
+                  boxSizing:"border-box",
+                }}
+              />
+              {avgName && (
+                <div style={{fontSize:10, color:C.inkSoft, marginTop:4}}>
+                  ID: <strong>{avgName.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-_]/g, "")}</strong>
+                </div>
+              )}
+            </div>
+
+            {/* Botones */}
+            <div style={{display:"flex", gap:8}}>
+              <button
+                onClick={createAverage}
+                disabled={!avgName.trim() || creatingAvg}
+                style={{
+                  flex:1, padding:"10px", borderRadius:8, border:"none",
+                  background: avgName.trim() && !creatingAvg ? "#3B82F6" : C.borderSm,
+                  color:"white", fontSize:13, fontWeight:700,
+                  cursor: avgName.trim() && !creatingAvg ? "pointer" : "default",
+                  fontFamily:FF,
+                }}
+              >
+                {creatingAvg ? "Creando…" : "✓ Crear y abrir"}
+              </button>
+              <button
+                onClick={() => setShowAvgModal(false)}
+                disabled={creatingAvg}
+                style={{
+                  padding:"10px 16px", borderRadius:8, fontFamily:FF,
+                  border:`1px solid ${C.border}`, background:"white",
+                  color:C.inkMid, fontSize:12, cursor: creatingAvg ? "default" : "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal generador de links ── */}
       {showGen && (
@@ -331,6 +531,45 @@ export default function Admin() {
         </div>
       )}
 
+      {/* ── Barra de selección flotante ── */}
+      {selected.size > 0 && (
+        <div style={{
+          position:"fixed", bottom:24, left:"50%", transform:"translateX(-50%)",
+          background:"#1E293B", color:"white", padding:"12px 20px",
+          borderRadius:12, boxShadow:"0 8px 32px rgba(0,0,0,0.25)",
+          display:"flex", alignItems:"center", gap:16, zIndex:100,
+          fontFamily:FF,
+        }}>
+          <span style={{fontSize:13, fontWeight:600}}>
+            {selected.size} seleccionado{selected.size !== 1 ? "s" : ""}
+          </span>
+          <div style={{width:1, height:20, background:"rgba(255,255,255,0.2)"}}/>
+          <button
+            onClick={() => setShowAvgModal(true)}
+            disabled={selected.size < 2}
+            style={{
+              padding:"8px 14px", borderRadius:8, border:"none",
+              background: selected.size >= 2 ? "#3B82F6" : "#475569",
+              color:"white", fontSize:12, fontWeight:700,
+              cursor: selected.size >= 2 ? "pointer" : "default",
+              fontFamily:FF, display:"flex", alignItems:"center", gap:6,
+            }}
+          >
+            📊 Crear promedio
+          </button>
+          <button
+            onClick={clearSelection}
+            style={{
+              padding:"8px 12px", borderRadius:8,
+              border:"1px solid rgba(255,255,255,0.2)", background:"transparent",
+              color:"white", fontSize:12, cursor:"pointer", fontFamily:FF,
+            }}
+          >
+            ✕ Limpiar
+          </button>
+        </div>
+      )}
+
       {/* ── Topbar ── */}
       <header style={{
         height:52, background:C.white, borderBottom:`1px solid ${C.border}`,
@@ -423,6 +662,18 @@ export default function Admin() {
           <table style={{width:"100%", borderCollapse:"collapse"}}>
             <thead>
               <tr style={{background:C.bg}}>
+                {/* Checkbox seleccionar todo */}
+                <th style={{
+                  padding:"10px 12px", width:40, textAlign:"center",
+                  borderBottom:`1px solid ${C.border}`,
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={rows.length > 0 && selected.size === rows.length}
+                    onChange={toggleSelectAll}
+                    style={{accentColor:C.red, width:15, height:15, cursor:"pointer"}}
+                  />
+                </th>
                 {[
                   {label:"Nombre / ID",    col:null,         w:"auto"},
                   {label:"Última actividad",col:"updated_at", w:160},
@@ -446,17 +697,27 @@ export default function Admin() {
             </thead>
             <tbody>
               {rows.length === 0 && (
-                <tr><td colSpan={6} style={{padding:32, textAlign:"center", color:C.inkSoft, fontSize:13}}>
+                <tr><td colSpan={7} style={{padding:32, textAlign:"center", color:C.inkSoft, fontSize:13}}>
                   No hay sesiones todavía.
                 </td></tr>
               )}
               {rows.map((s, i) => {
                 const level = s.score > 0 ? lv(s.score) : null;
+                const isSelected = selected.has(s.id);
                 return (
                   <tr key={s.id} style={{
                     borderBottom:`1px solid ${C.borderSm}`,
-                    background: i%2===0 ? C.white : C.bg,
+                    background: isSelected ? "#EFF6FF" : i%2===0 ? C.white : C.bg,
                   }}>
+                    {/* Checkbox */}
+                    <td style={{padding:"12px 12px", textAlign:"center"}}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(s.id)}
+                        style={{accentColor:C.red, width:15, height:15, cursor:"pointer"}}
+                      />
+                    </td>
                     {/* ID */}
                     <td style={{padding:"12px 16px"}}>
                       <div style={{fontSize:13, fontWeight:700, color:C.ink}}>{s.id}</div>
