@@ -152,7 +152,8 @@ export default function Admin() {
       const now = new Date().toISOString();
       const payload = {
         ans: avgData,
-        drivers: {} // Drivers vacíos para el promedio
+        drivers: {},
+        isAverage: true,
       };
       
       const { error } = await supabase

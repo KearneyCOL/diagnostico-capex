@@ -138,6 +138,7 @@ export default function DVB() {
   const [exp,        setExp]        = useState(CRITERIOS[0].key);
   const [mounted,    setMounted]    = useState(false);
   const [hydrated,   setHydrated]   = useState(false);
+  const [isViewOnly, setIsViewOnly] = useState(false);
 
   // ── Supabase ──────────────────────────────────────────────────────────────
   const [assessId,   setAssessId]   = useState(null);
@@ -182,6 +183,7 @@ export default function DVB() {
     const urlId = getIdFromUrl();
     const hydrate = (payload) => {
       if (!payload) return;
+      if (payload.isAverage) setIsViewOnly(true);
       if (payload.ans) {
         const base = emptyAns();
         Object.entries(payload.ans).forEach(([k, v]) => {
@@ -244,13 +246,20 @@ export default function DVB() {
   const set  = (rk,sid,v) => setAns(p => ({...p, [rk]: {...p[rk], [sid]:v}}));
   const cs   = useCallback((rk,ck) => wavg(CRITERIOS.find(c=>c.key===ck).subs, ans[rk]), [ans]);
   const rs   = useCallback((rk)    => { const vs=CRITERIOS.map(c=>cs(rk,c.key)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; }, [cs]);
-  const cg   = useCallback((ck)    => { const vs=ACTIVE_RUBROS.map(r=>cs(r.key,ck)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; }, [cs, ACTIVE_RUBROS]);
-  const gs   = useMemo(()=>{ const vs=ACTIVE_RUBROS.map(r=>rs(r.key)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; }, [rs, ACTIVE_RUBROS]);
 
-  const totA = ACTIVE_RUBROS.reduce((s,r)=>s+CRITERIOS.reduce((s2,c)=>s2+c.subs.filter(sq=>ans[r.key]?.[sq.id]>0).length,0),0);
-  const totQ = ACTIVE_RUBROS.length * CRITERIOS.reduce((s,c)=>s+c.subs.length, 0);
+  const SHOWN_RUBROS = useMemo(() => {
+    if (!isViewOnly) return ACTIVE_RUBROS;
+    const withData = ACTIVE_RUBROS.filter(r => rs(r.key) > 0);
+    return withData.length > 0 ? withData : ACTIVE_RUBROS;
+  }, [isViewOnly, ACTIVE_RUBROS, rs]);
+
+  const cg   = useCallback((ck)    => { const vs=SHOWN_RUBROS.map(r=>cs(r.key,ck)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; }, [cs, SHOWN_RUBROS]);
+  const gs   = useMemo(()=>{ const vs=SHOWN_RUBROS.map(r=>rs(r.key)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; }, [rs, SHOWN_RUBROS]);
+
+  const totA = SHOWN_RUBROS.reduce((s,r)=>s+CRITERIOS.reduce((s2,c)=>s2+c.subs.filter(sq=>ans[r.key]?.[sq.id]>0).length,0),0);
+  const totQ = SHOWN_RUBROS.length * CRITERIOS.reduce((s,c)=>s+c.subs.length, 0);
   const pct  = Math.round((totA/totQ)*100);
-  const ar   = ACTIVE_RUBROS.find(r=>r.key===rubro) || ACTIVE_RUBROS[0];
+  const ar   = SHOWN_RUBROS.find(r=>r.key===rubro) || SHOWN_RUBROS[0];
   const arSc = rs(rubro);
   const rSc  = useMemo(()=>{ const o={}; CRITERIOS.forEach(c=>{o[c.key]=cs(rubro,c.key);}); return o; }, [cs,rubro]);
 
@@ -350,7 +359,7 @@ export default function DVB() {
   const exportExcel = () => {
 
     const rows = [];
-    ACTIVE_RUBROS.forEach(r => {
+    SHOWN_RUBROS.forEach(r => {
       CRITERIOS.forEach(c => {
         c.subs.forEach(sq => {
           rows.push({
@@ -452,7 +461,7 @@ const resetAll = () => {
         {tab==="detail" && (
           <nav style={{flex:1, padding:"6px 10px", overflowY:"auto"}}>
             <div style={{fontSize:9, fontWeight:700, color:C.inkFaint, textTransform:"uppercase", letterSpacing:"0.14em", padding:"0 4px", marginBottom:5}}>Paquete CAPEX</div>
-            {ACTIVE_RUBROS.map(r => {
+            {SHOWN_RUBROS.map(r => {
               const sc=rs(r.key), isA=r.key===rubro;
               const qa=CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[r.key]?.[sq.id]>0).length,0);
               return (
@@ -530,7 +539,7 @@ const resetAll = () => {
                 border:"none",outline:"none",fontSize:12,fontWeight:700,
                 color:C.redH,background:"transparent",cursor:"pointer",fontFamily:FF,paddingRight:4,
               }}>
-                {ACTIVE_RUBROS.map(r=><option key={r.key} value={r.key}>{r.icon} {r.label}</option>)}
+                {SHOWN_RUBROS.map(r=><option key={r.key} value={r.key}>{r.icon} {r.label}</option>)}
               </select>
             </div>
 
@@ -648,7 +657,7 @@ const resetAll = () => {
                   <div style={{width:24,height:2,background:C.gold,borderRadius:99,marginBottom:14}}/>
                   <p style={{fontSize:11,color:"rgba(255,255,255,0.5)",margin:0,lineHeight:1.6}}>8 Paquetes · 6 Criterios<br/>5 Niveles · 48 Preguntas</p>
                   <div style={{marginTop:"auto",paddingTop:20,display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-                    {ACTIVE_RUBROS.map(r=>(
+                    {SHOWN_RUBROS.map(r=>(
                       <div key={r.key} onClick={()=>{setRubro(r.key);setTab("detail");contentRef.current?.scrollTo({top:0,behavior:"smooth"});}} style={{background:"rgba(0,0,0,0.18)",borderRadius:5,padding:"5px 7px",fontSize:9.5,fontWeight:600,color:"rgba(255,255,255,0.8)",cursor:"pointer",border:"1px solid rgba(255,255,255,0.1)",textAlign:"center"}}>
                         {r.icon} {r.label}
                       </div>
@@ -848,7 +857,7 @@ const resetAll = () => {
                     <span style={{fontSize:11,color:C.inkSoft,fontStyle:"italic",marginLeft:4}}>Selecciona el paquete a diagnosticar</span>
                   </div>
                   {(() => {
-                    const r = ACTIVE_RUBROS.find(r=>r.key===introRubro);
+                    const r = SHOWN_RUBROS.find(r=>r.key===introRubro) || SHOWN_RUBROS[0];
                     return (
                       <button onClick={()=>{setRubro(introRubro);setTab("detail");contentRef.current?.scrollTo({top:0,behavior:"smooth"});}} style={{
                         padding:"8px 20px",borderRadius:8,border:"none",
@@ -861,7 +870,7 @@ const resetAll = () => {
                   })()}
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
-                  {ACTIVE_RUBROS.map(r => {
+                  {SHOWN_RUBROS.map(r => {
                     const sc=rs(r.key);
                     const qa=CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[r.key]?.[sq.id]>0).length,0);
                     const qtot=CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
@@ -1125,7 +1134,7 @@ const resetAll = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {ACTIVE_RUBROS.map((r,i) => {
+                    {SHOWN_RUBROS.map((r,i) => {
                       const sc=rs(r.key);
                       return (
                         <tr key={r.key} style={{background:i%2===0?C.white:C.bgStripe}}>
@@ -1178,12 +1187,10 @@ const resetAll = () => {
           {/* ══════════════════════════ RESUMEN ══ */}
           {tab==="resumen" && (() => {
             // Scores filtrados por paquete o globales
-            const rubroFilt = rFilter === "all" ? null : ACTIVE_RUBROS.find(r=>r.key===rFilter);
+            const rubroFilt = rFilter === "all" ? null : SHOWN_RUBROS.find(r=>r.key===rFilter);
             const csFilt  = (c) => rFilter==="all" ? cg(c) : cs(rFilter, c);
             const gsFilt  = rFilter==="all" ? gs : rs(rFilter);
-            const totAFilt = rFilter==="all" ? totA : CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[rFilter]?.[sq.id]>0).length,0);
-            const totQFilt = rFilter==="all" ? totQ : CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
-            const pctFilt  = totQFilt>0 ? Math.round((totAFilt/totQFilt)*100) : 0;
+
 
             return (
             <div style={{maxWidth:900}}>
@@ -1203,7 +1210,7 @@ const resetAll = () => {
                     background:rFilter==="all"?C.redLight:C.white,
                     color:rFilter==="all"?C.redH:C.inkMid,
                   }}>🏢 General</button>
-                  {ACTIVE_RUBROS.map(r=>(
+                  {SHOWN_RUBROS.map(r=>(
                     <button key={r.key} onClick={()=>setRFilter(r.key)} style={{
                       padding:"5px 12px",borderRadius:7,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:FF,
                       border:`1.5px solid ${rFilter===r.key?C.red:C.border}`,
@@ -1225,19 +1232,21 @@ const resetAll = () => {
                   <div style={{fontSize:13,color:"rgba(255,255,255,0.35)"}}>/5.0</div>
                   {gsFilt>0 && <div style={{marginTop:10,background:"rgba(255,255,255,0.15)",borderRadius:4,padding:"3px 10px",fontSize:11,fontWeight:700,color:"white"}}>{lv(Math.round(gsFilt)).label}</div>}
                 </div>
-                <div style={{background:C.white,padding:"24px 28px"}}>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:18}}>
-                    {[["Respondidas",totAFilt],["Total",totQFilt],["Completado",`${pctFilt}%`]].map(([l,v])=>(
-                      <div key={l} style={{textAlign:"center",padding:"12px",background:C.bgStripe,borderRadius:8,border:`1px solid ${C.borderSm}`}}>
-                        <div style={{fontSize:24,fontWeight:900,color:C.redH,lineHeight:1}}>{v}</div>
-                        <div style={{fontSize:9.5,color:C.inkSoft,marginTop:4,textTransform:"uppercase",letterSpacing:"0.08em"}}>{l}</div>
+                <div style={{background:C.white,padding:"24px 28px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                  {gsFilt > 0 ? (
+                    <>
+                      <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:C.inkSoft,marginBottom:10}}>
+                        Nivel de Madurez — {lv(Math.round(gsFilt)).label}
                       </div>
-                    ))}
-                  </div>
-                  <div style={{height:6,background:C.borderSm,borderRadius:99,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${pctFilt}%`,background:`linear-gradient(90deg,${C.redH},${C.red})`,borderRadius:99}}/>
-                  </div>
-                  <div style={{marginTop:7,fontSize:11,color:C.inkSoft}}>{pctFilt}% del diagnóstico completado · {totAFilt}/{totQFilt} preguntas</div>
+                      <p style={{fontSize:13.5,color:C.inkMid,lineHeight:1.7,margin:0}}>
+                        {lv(Math.round(gsFilt)).desc}
+                      </p>
+                    </>
+                  ) : (
+                    <p style={{fontSize:13,color:C.inkFaint,margin:0,fontStyle:"italic"}}>
+                      Complete el diagnóstico para ver la interpretación del nivel de madurez.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1270,7 +1279,7 @@ const resetAll = () => {
                     <h3 style={{fontSize:14,fontWeight:700,margin:0}}>Score por Paquete</h3>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
-                    {ACTIVE_RUBROS.map(r=>{
+                    {SHOWN_RUBROS.map(r=>{
                       const sc=rs(r.key),l=sc>0?lv(Math.round(sc)):null;
                       return(
                         <div key={r.key} onClick={()=>setRFilter(r.key)} style={{padding:"12px 14px",borderRadius:9,cursor:"pointer",background:sc>0?l.bg:C.bgStripe,border:`1px solid ${sc>0?l.border:C.borderSm}`,transition:"all .15s",position:"relative",overflow:"hidden"}}>
@@ -1337,7 +1346,7 @@ const resetAll = () => {
           {/* ══════════════════════════ BRECHAS & ROADMAP ══ */}
           {tab==="brechas" && (() => {
             const brechas = [];
-            ACTIVE_RUBROS.forEach(r => {
+            SHOWN_RUBROS.forEach(r => {
               CRITERIOS.forEach(c => {
                 c.subs.forEach(sq => {
                   const v = ans[r.key]?.[sq.id] || 0;
@@ -1368,7 +1377,7 @@ const resetAll = () => {
                   <div>
                     <h2 style={{fontSize:18, fontWeight:800, margin:"0 0 4px", letterSpacing:"-0.02em"}}>Brechas & Roadmap</h2>
                     <p style={{fontSize:12, color:C.inkMid, margin:0}}>
-                      {bFilter==="all" ? `General · ${brechas.length} respuestas` : `${ACTIVE_RUBROS.find(r=>r.key===bFilter)?.label} · ${brechasFilt.length} respuestas`}
+                      {bFilter==="all" ? `General · ${brechas.length} respuestas` : `${SHOWN_RUBROS.find(r=>r.key===bFilter)?.label} · ${brechasFilt.length} respuestas`}
                       {" · "}Top 10 brechas ordenadas por gap al nivel óptimo (5)
                     </p>
                   </div>
@@ -1382,7 +1391,7 @@ const resetAll = () => {
                     }}>
                       🏢 General (Claro)
                     </button>
-                    {ACTIVE_RUBROS.map(r => (
+                    {SHOWN_RUBROS.map(r => (
                       <button key={r.key} onClick={()=>setBFilter(r.key)} style={{
                         padding:"5px 12px", borderRadius:7, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:FF,
                         border:`1.5px solid ${bFilter===r.key ? C.red : C.border}`,

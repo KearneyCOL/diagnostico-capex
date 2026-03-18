@@ -17,11 +17,11 @@ export const C = {
   gold:     "#D4A843",
   goldLight:"#FEF3C7",
   L: [
-    { c:"#EF4444", bg:"#FEF2F2", border:"#FECACA", text:"#991B1B", label:"Inicial"    },
-    { c:"#F97316", bg:"#FFF7ED", border:"#FED7AA", text:"#9A3412", label:"Básico"     },
-    { c:"#EAB308", bg:"#FEFCE8", border:"#FEF08A", text:"#854D0E", label:"Definido"   },
-    { c:"#22C55E", bg:"#F0FDF4", border:"#BBF7D0", text:"#166534", label:"Gestionado" },
-    { c:"#3B82F6", bg:"#EFF6FF", border:"#BFDBFE", text:"#1E40AF", label:"Optimizado" },
+    { c:"#EF4444", bg:"#FEF2F2", border:"#FECACA", text:"#991B1B", label:"Inicial",    desc:"La organización no cuenta con procesos formales para planificar y priorizar inversiones CAPEX. Las decisiones son reactivas y ad-hoc, sin vinculación a objetivos estratégicos ni criterios de priorización establecidos." },
+    { c:"#F97316", bg:"#FFF7ED", border:"#FED7AA", text:"#9A3412", label:"Básico",     desc:"Existen lineamientos generales, pero los procesos de planificación CAPEX son informales e inconsistentes entre áreas. La priorización depende de criterios subjetivos y la trazabilidad de las decisiones de inversión es limitada." },
+    { c:"#EAB308", bg:"#FEFCE8", border:"#FEF08A", text:"#854D0E", label:"Definido",   desc:"Los procesos CAPEX están documentados y son repetibles. Existe un roadmap tecnológico aprobado y las inversiones se alinean a hitos estratégicos. Las decisiones de priorización son transparentes y reproducibles entre ciclos." },
+    { c:"#22C55E", bg:"#F0FDF4", border:"#BBF7D0", text:"#166534", label:"Gestionado", desc:"Las inversiones CAPEX se gestionan con KPIs explícitos y revisiones periódicas formales. Los desvíos se identifican y corrigen oportunamente. La organización toma decisiones basadas en datos históricos y proyecciones cuantitativas." },
+    { c:"#3B82F6", bg:"#EFF6FF", border:"#BFDBFE", text:"#1E40AF", label:"Optimizado", desc:"El CAPEX está integrado al ciclo estratégico con feedback loops continuos. La organización optimiza su cartera con benchmarks de industria, aprende sistemáticamente de cada ciclo de inversión y anticipa necesidades futuras con modelos predictivos." },
   ],
 };
 
