@@ -1,52 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "./supabaseClient";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-
-// ── Mismos tokens que DVB ─────────────────────────────────────────────────────
-const C = {
-  red:"#DA291C", redH:"#C0392B", redLight:"#FEF2F2", redBorder:"#FECACA",
-  white:"#FFFFFF", bg:"#F7F6F4", border:"#E4E2DE", borderSm:"#EEECE9",
-  ink:"#18181B", inkMid:"#52525B", inkSoft:"#A1A1AA", inkFaint:"#D4D4D8",
-  L:[
-    {c:"#EF4444",bg:"#FEF2F2",text:"#991B1B",label:"Inicial"},
-    {c:"#F97316",bg:"#FFF7ED",text:"#9A3412",label:"Básico"},
-    {c:"#EAB308",bg:"#FEFCE8",text:"#854D0E",label:"Definido"},
-    {c:"#22C55E",bg:"#F0FDF4",text:"#166534",label:"Gestionado"},
-    {c:"#3B82F6",bg:"#EFF6FF",text:"#1E40AF",label:"Optimizado"},
-  ],
-};
-const FF = "'Segoe UI','Calibri',system-ui,sans-serif";
-
-const RUBROS = [
-  {key:"red_movil",label:"Red Móvil",icon:"📡"},
-  {key:"red_fija",label:"Red Fija",icon:"🔌"},
-  {key:"transmision",label:"Transmisión",icon:"🔗"},
-  {key:"nube_publica",label:"Nube Pública",icon:"☁️"},
-  {key:"nube_telco",label:"Nube Telco",icon:"🖥️"},
-  {key:"it",label:"IT",icon:"💻"},
-  {key:"umm",label:"UMM",icon:"📦"},
-  {key:"umc",label:"UMC",icon:"🏗️"},
-];
-const CRITERIOS = [
-  {num:"01",key:"alineacion",label:"Alineación",subs:[{id:"a1",p:1.2},{id:"a2",p:1.2},{id:"a3",p:1.0},{id:"a4",p:1.0},{id:"a5",p:0.9},{id:"a6",p:0.8},{id:"a7",p:0.8}]},
-  {num:"02",key:"granularidad",label:"Granularidad",subs:[{id:"g1",p:1.2},{id:"g2",p:1.2},{id:"g3",p:1.1},{id:"g4",p:1.0},{id:"g5",p:1.0},{id:"g6",p:0.9},{id:"g7",p:0.9},{id:"g8",p:0.7}]},
-  {num:"03",key:"aprobacion",label:"Aprobación",subs:[{id:"ap1",p:1.2},{id:"ap2",p:1.2},{id:"ap3",p:1.1},{id:"ap4",p:1.1},{id:"ap5",p:1.0},{id:"ap6",p:0.9},{id:"ap7",p:0.8}]},
-  {num:"04",key:"forecast",label:"Forecast",subs:[{id:"f1",p:1.2},{id:"f2",p:1.2},{id:"f3",p:1.1},{id:"f4",p:1.0},{id:"f5",p:1.0},{id:"f6",p:0.9},{id:"f7",p:0.7}]},
-  {num:"05",key:"riesgos",label:"Riesgos",subs:[{id:"r1",p:1.2},{id:"r2",p:1.1},{id:"r3",p:1.1},{id:"r4",p:1.0},{id:"r5",p:0.9},{id:"r6",p:0.8},{id:"r7",p:0.7}]},
-  {num:"06",key:"gobernanza",label:"Gobernanza",subs:[{id:"go1",p:1.2},{id:"go2",p:1.2},{id:"go3",p:1.2},{id:"go4",p:1.1},{id:"go5",p:1.0},{id:"go6",p:0.9},{id:"go7",p:0.8},{id:"go8",p:0.7}]},
-];
-const wavg = (subs, ans) => {
-  let t=0, w=0;
-  subs.forEach(s => { const v=ans?.[s.id]; if(v>0){t+=v*s.p; w+=s.p;} });
-  return w ? t/w : 0;
-};
-
-// Helper para obtener datos del rubro (soporta data.ans.rubro o data.rubro)
-const getRubroData = (data, rubroKey) => {
-  if (!data) return null;
-  return data.ans?.[rubroKey] || data[rubroKey] || null;
-};
+import { C, FF, RUBROS, CRITERIOS, wavg, lv, getRubroData } from "./shared";
 
 const globalScore = (data) => {
   if (!data) return 0;
@@ -65,7 +21,6 @@ const answered = (data) => {
   }, 0);
 };
 const totalQ = RUBROS.length * CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
-const lv = v => C.L[Math.max(0,Math.min(4,Math.round(v)-1))];
 
 export default function Admin() {
   const [sessions, setSessions] = useState([]);
@@ -93,7 +48,7 @@ export default function Admin() {
       });
   }, []);
 
-  const rows = sessions
+  const rows = useMemo(() => sessions
     .map(s => ({
       ...s,
       score: globalScore(s.data),
@@ -105,7 +60,7 @@ export default function Admin() {
       if (sortBy === "score") return (a.score - b.score) * dir;
       if (sortBy === "pct")   return (a.pct - b.pct) * dir;
       return (new Date(a.updated_at) - new Date(b.updated_at)) * dir;
-    });
+    }), [sessions, search, sortBy, sortDir]);
 
   const toggleSort = (col) => {
     if (sortBy === col) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -153,7 +108,7 @@ export default function Admin() {
       RUBROS.forEach(rubro => {
         // Verificar si alguna sesión tiene datos para este rubro
         const hasDataForRubro = selectedSessions.some(s => {
-          const rubroData = s.data?.ans?.[rubro.key] || s.data?.[rubro.key];
+          const rubroData = getRubroData(s.data, rubro.key);
           return rubroData && Object.values(rubroData).some(v => v > 0);
         });
         
@@ -166,10 +121,7 @@ export default function Admin() {
               // Obtener todos los valores para esta pregunta
               // Soportar ambas estructuras: data.ans.rubro o data.rubro
               const values = selectedSessions
-                .map(s => {
-                  const rubroData = s.data?.ans?.[rubro.key] || s.data?.[rubro.key];
-                  return rubroData?.[sub.id];
-                })
+                .map(s => getRubroData(s.data, rubro.key)?.[sub.id])
                 .filter(v => v && v > 0);
               
               // Calcular promedio si hay valores
@@ -222,12 +174,8 @@ export default function Admin() {
       setAvgName("");
       setSelected(new Set());
       
-      // Recargar sesiones
-      const { data: newData } = await supabase
-        .from("dvb_assessments")
-        .select("id, data, created_at, updated_at")
-        .order("updated_at", { ascending: false });
-      if (newData) setSessions(newData);
+      // Añadir la nueva sesión al estado local sin recargar todo
+      setSessions(prev => [{ id: cleanName, data: payload, created_at: now, updated_at: now }, ...prev]);
       
     } catch (err) {
       console.error("Error creando promedio:", err);
@@ -258,9 +206,9 @@ export default function Admin() {
   const [showGen,  setShowGen]  = useState(false);
   const [genInput, setGenInput] = useState("");
   const [genCopied,setGenCopied]= useState(false);
-  const ALL_RUBROS = ["red_movil","red_fija","transmision","nube_publica","nube_telco","it","umm","umc"];
-  const RUBRO_LABELS = {red_movil:"📡 Red Móvil",red_fija:"🔌 Red Fija",transmision:"🔗 Transmisión",nube_publica:"☁️ Nube Pública",nube_telco:"🖥️ Nube Telco",it:"💻 IT",umm:"📦 UMM",umc:"🏗️ UMC"};
-  const [genRubros, setGenRubros] = useState([...ALL_RUBROS]);
+  const ALL_RUBROS = useMemo(() => RUBROS.map(r => r.key), []);
+  const RUBRO_LABELS = useMemo(() => Object.fromEntries(RUBROS.map(r => [r.key, `${r.icon} ${r.label}`])), []);
+  const [genRubros, setGenRubros] = useState(() => RUBROS.map(r => r.key));
 
   const toggleGenRubro = (key) => setGenRubros(prev =>
     prev.includes(key) ? prev.filter(k=>k!==key) : [...prev, key]
@@ -506,7 +454,7 @@ export default function Admin() {
                         onChange={()=>{ toggleGenRubro(key); setGenCopied(false); }}
                         style={{accentColor:C.red, width:14, height:14, cursor:"pointer", flexShrink:0}}
                       />
-                      <span style={{fontSize:11, fontWeight: checked ? 600 : 400, color: checked ? C.inkH : C.inkMid}}>
+                      <span style={{fontSize:11, fontWeight: checked ? 600 : 400, color: checked ? C.ink : C.inkMid}}>
                         {RUBRO_LABELS[key]}
                       </span>
                     </label>
