@@ -41,17 +41,28 @@ const wavg = (subs, ans) => {
   subs.forEach(s => { const v=ans?.[s.id]; if(v>0){t+=v*s.p; w+=s.p;} });
   return w ? t/w : 0;
 };
+
+// Helper para obtener datos del rubro (soporta data.ans.rubro o data.rubro)
+const getRubroData = (data, rubroKey) => {
+  if (!data) return null;
+  return data.ans?.[rubroKey] || data[rubroKey] || null;
+};
+
 const globalScore = (data) => {
   if (!data) return 0;
   const vs = RUBROS.map(r => {
-    const cs = CRITERIOS.map(c => wavg(c.subs, data[r.key])).filter(v=>v>0);
+    const rubroData = getRubroData(data, r.key);
+    const cs = CRITERIOS.map(c => wavg(c.subs, rubroData)).filter(v=>v>0);
     return cs.length ? cs.reduce((a,b)=>a+b)/cs.length : 0;
   }).filter(v=>v>0);
   return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0;
 };
 const answered = (data) => {
   if (!data) return 0;
-  return RUBROS.reduce((s,r) => s + CRITERIOS.reduce((s2,c) => s2 + c.subs.filter(sq => data[r.key]?.[sq.id] > 0).length, 0), 0);
+  return RUBROS.reduce((s,r) => {
+    const rubroData = getRubroData(data, r.key);
+    return s + CRITERIOS.reduce((s2,c) => s2 + c.subs.filter(sq => rubroData?.[sq.id] > 0).length, 0);
+  }, 0);
 };
 const totalQ = RUBROS.length * CRITERIOS.reduce((s,c)=>s+c.subs.length,0);
 const lv = v => C.L[Math.max(0,Math.min(4,Math.round(v)-1))];
@@ -136,38 +147,67 @@ export default function Admin() {
       const selectedSessions = sessions.filter(s => selected.has(s.id));
       
       // Calcular el promedio de todas las respuestas
+      // Solo para rubros que tengan datos en al menos una sesión
       const avgData = {};
       
       RUBROS.forEach(rubro => {
-        avgData[rubro.key] = {};
-        
-        CRITERIOS.forEach(criterio => {
-          criterio.subs.forEach(sub => {
-            // Obtener todos los valores para esta pregunta
-            const values = selectedSessions
-              .map(s => s.data?.[rubro.key]?.[sub.id])
-              .filter(v => v && v > 0);
-            
-            // Calcular promedio si hay valores
-            if (values.length > 0) {
-              const avg = values.reduce((a, b) => a + b, 0) / values.length;
-              // Redondear al entero más cercano (1-5)
-              avgData[rubro.key][sub.id] = Math.round(avg);
-            }
-          });
+        // Verificar si alguna sesión tiene datos para este rubro
+        const hasDataForRubro = selectedSessions.some(s => {
+          const rubroData = s.data?.ans?.[rubro.key] || s.data?.[rubro.key];
+          return rubroData && Object.values(rubroData).some(v => v > 0);
         });
+        
+        // Solo procesar rubros con datos
+        if (hasDataForRubro) {
+          avgData[rubro.key] = {};
+          
+          CRITERIOS.forEach(criterio => {
+            criterio.subs.forEach(sub => {
+              // Obtener todos los valores para esta pregunta
+              // Soportar ambas estructuras: data.ans.rubro o data.rubro
+              const values = selectedSessions
+                .map(s => {
+                  const rubroData = s.data?.ans?.[rubro.key] || s.data?.[rubro.key];
+                  return rubroData?.[sub.id];
+                })
+                .filter(v => v && v > 0);
+              
+              // Calcular promedio si hay valores
+              if (values.length > 0) {
+                const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                // Redondear al entero más cercano (1-5)
+                avgData[rubro.key][sub.id] = Math.round(avg);
+              }
+            });
+          });
+        }
       });
+
+      // Verificar que hay datos para promediar
+      const hasAnyData = Object.keys(avgData).length > 0 && 
+        Object.values(avgData).some(rubro => Object.keys(rubro).length > 0);
+      
+      if (!hasAnyData) {
+        alert("No hay datos suficientes para crear un promedio. Asegúrate de que los registros seleccionados tengan respuestas.");
+        setCreatingAvg(false);
+        return;
+      }
 
       // Limpiar el nombre
       const cleanName = avgName.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-_]/g, "");
       
-      // Guardar en Supabase
+      // Guardar en Supabase con la estructura correcta: { ans: {...}, drivers: {...} }
       const now = new Date().toISOString();
+      const payload = {
+        ans: avgData,
+        drivers: {} // Drivers vacíos para el promedio
+      };
+      
       const { error } = await supabase
         .from("dvb_assessments")
         .upsert({
           id: cleanName,
-          data: avgData,
+          data: payload,
           created_at: now,
           updated_at: now,
         });
@@ -243,12 +283,12 @@ export default function Admin() {
       "Score global":       s.score > 0 ? +s.score.toFixed(2) : "",
       "Nivel":              s.score > 0 ? C.L[Math.max(0,Math.min(4,Math.round(s.score)-1))].label : "Sin datos",
       ...Object.fromEntries(CRITERIOS.map(c => {
-        const cs = RUBROS.map(r => wavg(c.subs, s.data?.[r.key])).filter(v=>v>0);
+        const cs = RUBROS.map(r => wavg(c.subs, getRubroData(s.data, r.key))).filter(v=>v>0);
         const avg = cs.length ? cs.reduce((a,b)=>a+b)/cs.length : "";
         return [`Criterio ${c.num} - ${c.label}`, avg ? +avg.toFixed(2) : ""];
       })),
       ...Object.fromEntries(RUBROS.map(r => {
-        const cs = CRITERIOS.map(c => wavg(c.subs, s.data?.[r.key])).filter(v=>v>0);
+        const cs = CRITERIOS.map(c => wavg(c.subs, getRubroData(s.data, r.key))).filter(v=>v>0);
         const avg = cs.length ? cs.reduce((a,b)=>a+b)/cs.length : "";
         return [`Paquete - ${r.label}`, avg ? +avg.toFixed(2) : ""];
       })),
@@ -261,13 +301,14 @@ export default function Admin() {
       RUBROS.forEach(r => {
         CRITERIOS.forEach(c => {
           c.subs.forEach(sq => {
+            const rubroData = getRubroData(s.data, r.key);
             detalle.push({
               "ID / Nombre": s.id,
               "Última actividad": new Date(s.updated_at).toLocaleString("es-CO"),
               "Paquete": r.label,
               "Criterio": `${c.num} - ${c.label}`,
               "Pregunta ID": sq.id,
-              "Respuesta (1-5)": s.data?.[r.key]?.[sq.id] || "",
+              "Respuesta (1-5)": rubroData?.[sq.id] || "",
             });
           });
         });
