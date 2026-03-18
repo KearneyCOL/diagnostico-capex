@@ -138,7 +138,6 @@ export default function DVB() {
   const [exp,        setExp]        = useState(CRITERIOS[0].key);
   const [mounted,    setMounted]    = useState(false);
   const [hydrated,   setHydrated]   = useState(false);
-  const [isViewOnly, setIsViewOnly] = useState(false);
 
   // ── Supabase ──────────────────────────────────────────────────────────────
   const [assessId,   setAssessId]   = useState(null);
@@ -183,7 +182,6 @@ export default function DVB() {
     const urlId = getIdFromUrl();
     const hydrate = (payload) => {
       if (!payload) return;
-      if (payload.isAverage) setIsViewOnly(true);
       if (payload.ans) {
         const base = emptyAns();
         Object.entries(payload.ans).forEach(([k, v]) => {
@@ -248,10 +246,10 @@ export default function DVB() {
   const rs   = useCallback((rk)    => { const vs=CRITERIOS.map(c=>cs(rk,c.key)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; }, [cs]);
 
   const SHOWN_RUBROS = useMemo(() => {
-    if (!isViewOnly) return ACTIVE_RUBROS;
+    if (!hydrated) return ACTIVE_RUBROS;
     const withData = ACTIVE_RUBROS.filter(r => rs(r.key) > 0);
     return withData.length > 0 ? withData : ACTIVE_RUBROS;
-  }, [isViewOnly, ACTIVE_RUBROS, rs]);
+  }, [hydrated, ACTIVE_RUBROS, rs]);
 
   const cg   = useCallback((ck)    => { const vs=SHOWN_RUBROS.map(r=>cs(r.key,ck)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; }, [cs, SHOWN_RUBROS]);
   const gs   = useMemo(()=>{ const vs=SHOWN_RUBROS.map(r=>rs(r.key)).filter(v=>v>0); return vs.length ? vs.reduce((a,b)=>a+b)/vs.length : 0; }, [rs, SHOWN_RUBROS]);
@@ -461,7 +459,7 @@ const resetAll = () => {
         {tab==="detail" && (
           <nav style={{flex:1, padding:"6px 10px", overflowY:"auto"}}>
             <div style={{fontSize:9, fontWeight:700, color:C.inkFaint, textTransform:"uppercase", letterSpacing:"0.14em", padding:"0 4px", marginBottom:5}}>Paquete CAPEX</div>
-            {SHOWN_RUBROS.map(r => {
+            {ACTIVE_RUBROS.map(r => {
               const sc=rs(r.key), isA=r.key===rubro;
               const qa=CRITERIOS.reduce((s,c)=>s+c.subs.filter(sq=>ans[r.key]?.[sq.id]>0).length,0);
               return (
@@ -539,7 +537,7 @@ const resetAll = () => {
                 border:"none",outline:"none",fontSize:12,fontWeight:700,
                 color:C.redH,background:"transparent",cursor:"pointer",fontFamily:FF,paddingRight:4,
               }}>
-                {SHOWN_RUBROS.map(r=><option key={r.key} value={r.key}>{r.icon} {r.label}</option>)}
+                {ACTIVE_RUBROS.map(r=><option key={r.key} value={r.key}>{r.icon} {r.label}</option>)}
               </select>
             </div>
 
